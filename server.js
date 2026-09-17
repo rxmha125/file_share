@@ -7,6 +7,7 @@ import {
   ListObjectsV2Command,
   DeleteObjectCommand,
   GetObjectCommand,
+  PutBucketCorsCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import path from "path";
@@ -36,23 +37,83 @@ const s3 = new S3Client({
   },
 });
 
+// Configure CORS on the R2 bucket so the browser can PUT files directly (presigned uploads).
+// Idempotent — safe to run on every cold start.
+async function ensureCors() {
+  try {
+    await s3.send(
+      new PutBucketCorsCommand({
+        Bucket: R2_BUCKET_NAME,
+        CORSConfiguration: {
+          CORSRules: [
+            {
+              AllowedOrigins: ["*"],
+              AllowedMethods: ["GET", "PUT", "HEAD"],
+              AllowedHeaders: ["*"],
+              ExposeHeaders: ["ETag"],
+              MaxAgeSeconds: 3600,
+            },
+          ],
+        },
+      })
+    );
+  } catch (e) {
+    console.error("CORS setup skipped:", e.message);
+  }
+}
+ensureCors();
+
 const app = express();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1024 * 1024 * 1024 * 2 } }); // 2GB limit
+app.use(express.json());
+// Serve static frontend in local dev. On Vercel, static files are served by the platform.
+const publicDir = path.join(__dirname, "public");
+app.use(express.static(publicDir));
 
-app.use(express.static(path.join(__dirname, "public")));
+function safeKey(originalName) {
+  const safe = originalName
+    .replace(/[^a-zA-Z0-9.\-_ ]/g, "")
+    .replace(/\s+/g, "_")
+    .slice(0, 80);
+  return `${Date.now()}-${crypto.randomBytes(4).toString("hex")}-${safe}`;
+}
 
-// Upload
+// Presign — returns a one-time PUT URL the browser uploads directly to R2 with.
+// This bypasses Vercel's 4.5MB serverless body limit entirely.
+app.get("/api/presign", async (req, res) => {
+  try {
+    const name = (req.query.name || "file").toString().slice(0, 200);
+    const type = (req.query.type || "application/octet-stream").toString().slice(0, 200);
+    const key = safeKey(name);
+
+    const uploadUrl = await getSignedUrl(
+      s3,
+      new PutObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: key,
+        ContentType: type,
+      }),
+      { expiresIn: 600 } // 10 min
+    );
+
+    res.json({
+      uploadUrl,
+      key,
+      publicUrl: `${R2_PUBLIC_BASE_URL}/${key}`,
+      name,
+    });
+  } catch (err) {
+    console.error("Presign error:", err);
+    res.status(500).json({ error: "Failed to generate upload URL", detail: err.message, stack: err.stack });
+  }
+});
+
+// Legacy buffered upload — kept for small-file compatibility / local dev.
+// Will fail on Vercel for files > 4.5MB due to serverless body limits. Prefer /api/presign.
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1024 * 1024 * 1024 * 2 } });
 app.post("/api/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No file provided" });
-
-    const ext = path.extname(req.file.originalname);
-    const safeName = req.file.originalname
-      .replace(/[^a-zA-Z0-9.\-_ ]/g, "")
-      .replace(/\s+/g, "_")
-      .slice(0, 80);
-    const key = `${Date.now()}-${crypto.randomBytes(4).toString("hex")}-${safeName}`;
-
+    const key = safeKey(req.file.originalname);
     await s3.send(
       new PutObjectCommand({
         Bucket: R2_BUCKET_NAME,
@@ -61,17 +122,15 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
         ContentType: req.file.mimetype || "application/octet-stream",
       })
     );
-
-    const url = `${R2_PUBLIC_BASE_URL}/${key}`;
     res.json({
-      url,
+      url: `${R2_PUBLIC_BASE_URL}/${key}`,
       name: req.file.originalname,
       size: req.file.size,
       key,
     });
   } catch (err) {
     console.error("Upload error:", err);
-    res.status(500).json({ error: "Upload failed", detail: err.message });
+    res.status(500).json({ error: "Upload failed", detail: err.message, stack: err.stack });
   }
 });
 
@@ -84,13 +143,11 @@ app.get("/api/files", async (req, res) => {
         MaxKeys: 100,
       })
     );
-
     const items = (data.Contents || [])
       .filter((o) => o.Size > 0)
       .map((o) => {
         const key = o.Key;
         const parts = key.split("-");
-        // key format: timestamp-random-safeName
         const namePart = parts.slice(2).join("-") || key;
         const ts = parseInt(parts[0], 10);
         return {
@@ -102,11 +159,10 @@ app.get("/api/files", async (req, res) => {
         };
       })
       .sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded));
-
     res.json({ files: items });
   } catch (err) {
     console.error("List error:", err);
-    res.status(500).json({ error: "Failed to list files", detail: err.message });
+    res.status(500).json({ error: "Failed to list files", detail: err.message, stack: err.stack });
   }
 });
 
@@ -123,11 +179,16 @@ app.delete("/api/files/:key", async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error("Delete error:", err);
-    res.status(500).json({ error: "Delete failed", detail: err.message });
+    res.status(500).json({ error: "Delete failed", detail: err.message, stack: err.stack });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`File share running on http://localhost:${PORT}`);
-});
+// Only listen when running locally (not on Vercel serverless)
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`File share running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;
