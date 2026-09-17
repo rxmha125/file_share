@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>share</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --fg: #111;
+    --muted: #888;
+    --line: #e5e5e5;
+    --accent: #111;
+    --hover: #f0f0f0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e0e0e;
+      --fg: #ececec;
+      --muted: #666;
+      --line: #1f1f1f;
+      --hover: #1a1a1a;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+  header {
+    margin-bottom: 48px;
+  }
+  header .mark {
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  header p {
+    color: var(--muted);
+    margin-top: 6px;
+    font-size: 14px;
+  }
+  /* drop zone — flat, no card */
+  .drop {
+    border: 1px dashed var(--line);
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color .15s, border-color .15s;
+    margin-bottom: 8px;
+  }
+  .drop:hover, .drop.over {
+    color: var(--fg);
+    border-color: var(--fg);
+  }
+  .drop .big {
+    font-size: 15px;
+    color: var(--fg);
+    margin-bottom: 4px;
+  }
+  .drop input { display: none; }
+  .progress {
+    height: 1px;
+    background: var(--line);
+    margin-top: 16px;
+    overflow: hidden;
+  }
+  .progress .bar {
+    height: 1px;
+    width: 0%;
+    background: var(--fg);
+    transition: width .2s;
+  }
+  /* files list — no cards, just rows separated by thin lines */
+  .section-title {
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 48px 0 16px;
+  }
+  .files { list-style: none; }
+  .file {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .file .name {
+    flex: 1;
+    font-size: 15px;
+    color: var(--fg);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .file .name:hover { text-decoration: underline; }
+  .file .meta {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .file .actions { display: flex; gap: 14px; }
+  .file .actions a, .file .actions button {
+    font-size: 13px;
+    color: var(--muted);
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 0;
+  }
+  .file .actions a:hover, .file .actions button:hover { color: var(--fg); }
+  .empty {
+    padding: 20px 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .preview-thumb {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--fg);
+    color: var(--bg);
+    padding: 8px 16px;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity .2s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  footer {
+    margin-top: 64px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark">moongram</div>
+    <h1>file share</h1>
+    <p>drop a file, get a link. no accounts, no nonsense.</p>
+  </header>
+
+  <div class="drop" id="drop">
+    <div class="big">Drop a file here</div>
+    <div>or click to browse — up to 2GB</div>
+    <input type="file" id="fileInput" />
+  </div>
+  <div class="progress" id="progress" style="display:none;"><div class="bar" id="bar"></div></div>
+
+  <div class="section-title">recent</div>
+  <ul class="files" id="files"></ul>
+  <div class="empty" id="empty">nothing here yet.</div>
+
+  <footer>files stored on cloudflare r2 · public at cdn.moongram.online</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const drop = document.getElementById("drop");
+const input = document.getElementById("fileInput");
+const filesEl = document.getElementById("files");
+const emptyEl = document.getElementById("empty");
+const progress = document.getElementById("progress");
+const bar = document.getElementById("bar");
+const toast = document.getElementById("toast");
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2400);
+}
+
+function fmtSize(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + " MB";
+  return (bytes / 1024 / 1024 / 1024).toFixed(2) + " GB";
+}
+
+function fmtDate(d) {
+  const date = new Date(d);
+  const now = new Date();
+  const diff = (now - date) / 1000;
+  if (diff < 60) return "just now";
+  if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+  if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+  if (diff < 86400 * 7) return Math.floor(diff / 86400) + "d ago";
+  return date.toLocaleDateString();
+}
+
+function isImage(name) {
+  return /\.(jpg|jpeg|png|gif|webp|svg|avif)$/i.test(name);
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+async function loadFiles() {
+  try {
+    const r = await fetch("/api/files");
+    const data = await r.json();
+    filesEl.innerHTML = "";
+    if (!data.files || data.files.length === 0) {
+      emptyEl.style.display = "block";
+      return;
+    }
+    emptyEl.style.display = "none";
+    data.files.forEach(f => {
+      const li = document.createElement("li");
+      li.className = "file";
+      const thumb = isImage(f.name)
+        ? `<img class="preview-thumb" src="${f.url}" alt="" loading="lazy" />`
+        : "";
+      li.innerHTML = `
+        ${thumb}
+        <a class="name" href="${f.url}" target="_blank" rel="noopener" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</a>
+        <span class="meta">${fmtSize(f.size)} · ${fmtDate(f.uploaded)}</span>
+        <span class="actions">
+          <a href="${f.url}" download="${escapeHtml(f.name)}">download</a>
+          <button data-key="${encodeURIComponent(f.key)}">delete</button>
+        </span>
+      `;
+      li.querySelector("button").onclick = async () => {
+        if (!confirm("delete this file?")) return;
+        const key = encodeURIComponent(f.key);
+        const res = await fetch(`/api/files/${key}`, { method: "DELETE" });
+        if (res.ok) {
+          li.remove();
+          showToast("deleted");
+          if (filesEl.children.length === 0) emptyEl.style.display = "block";
+        }
+      };
+      filesEl.appendChild(li);
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function uploadFile(file) {
+  progress.style.display = "block";
+  bar.style.width = "0%";
+  const form = new FormData();
+  form.append("file", file);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "/api/upload");
+
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const pct = (e.loaded / e.total) * 100;
+      bar.style.width = pct + "%";
+    }
+  };
+
+  xhr.onload = () => {
+    progress.style.display = "none";
+    bar.style.width = "0%";
+    if (xhr.status === 200) {
+      showToast("uploaded");
+      loadFiles();
+    } else {
+      showToast("upload failed");
+    }
+  };
+
+  xhr.onerror = () => {
+    progress.style.display = "none";
+    showToast("upload failed");
+  };
+
+  xhr.send(form);
+}
+
+drop.addEventListener("click", () => input.click());
+input.addEventListener("change", () => {
+  if (input.files.length) uploadFile(input.files[0]);
+  input.value = "";
+});
+
+["dragenter", "dragover"].forEach(ev => {
+  drop.addEventListener(ev, (e) => {
+    e.preventDefault();
+    drop.classList.add("over");
+  });
+});
+["dragleave", "drop"].forEach(ev => {
+  drop.addEventListener(ev, (e) => {
+    e.preventDefault();
+    drop.classList.remove("over");
+  });
+});
+drop.addEventListener("drop", (e) => {
+  e.preventDefault();
+  const files = e.dataTransfer.files;
+  if (files.length) uploadFile(files[0]);
+});
+
+// paste support
+window.addEventListener("paste", (e) => {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.kind === "file") {
+      const f = item.getAsFile();
+      if (f) uploadFile(f);
+      break;
+    }
+  }
+});
+
+loadFiles();
+setInterval(loadFiles, 15000);
+</script>
+</body>
+</html>
