@@ -32,3 +32,26 @@ No-auth file sharing web app. Drop a file, get a public link. Files are stored o
 
 - No auth. Anyone with the URL can upload and delete.
 - The frontend follows system light/dark mode, auto-refreshes the file list every 15s, supports drag-drop and paste-to-upload.
+- Errors (upload failed, CORS, network) are shown in a copyable log panel at the top of the page.
+
+## R2 CORS setup (required for presigned uploads)
+
+The browser uploads files **directly to R2** via a presigned PUT URL, which is a cross-origin request. You must configure CORS on the bucket in the Cloudflare dashboard:
+
+**Cloudflare Dashboard → R2 → `moongram-images` → Settings → CORS Policy → Add rule:**
+
+| Field | Value |
+|---|---|
+| Allowed Origins | `*` (or your Vercel domain) |
+| Allowed Methods | `GET`, `PUT`, `HEAD` |
+| Allowed Headers | `*` |
+| Expose Headers | `ETag` |
+| Max Age Seconds | `3600` |
+
+Without this, uploads fail with a CORS preflight error in the browser console.
+
+## Deploying to Vercel
+
+1. Push to `main` — Vercel auto-deploys.
+2. Set the 6 `R2_*` environment variables in Vercel (Project → Settings → Environment Variables).
+3. Ensure R2 CORS is configured (above).

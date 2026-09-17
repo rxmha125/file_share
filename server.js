@@ -7,7 +7,6 @@ import {
   ListObjectsV2Command,
   DeleteObjectCommand,
   GetObjectCommand,
-  PutBucketCorsCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import path from "path";
@@ -35,33 +34,14 @@ const s3 = new S3Client({
     accessKeyId: R2_ACCESS_KEY_ID,
     secretAccessKey: R2_SECRET_ACCESS_KEY,
   },
+  // Disable automatic checksums — otherwise the SDK appends x-amz-checksum-*
+  // to presigned URLs, which complicates browser CORS preflights.
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED",
 });
 
-// Configure CORS on the R2 bucket so the browser can PUT files directly (presigned uploads).
-// Idempotent — safe to run on every cold start.
-async function ensureCors() {
-  try {
-    await s3.send(
-      new PutBucketCorsCommand({
-        Bucket: R2_BUCKET_NAME,
-        CORSConfiguration: {
-          CORSRules: [
-            {
-              AllowedOrigins: ["*"],
-              AllowedMethods: ["GET", "PUT", "HEAD"],
-              AllowedHeaders: ["*"],
-              ExposeHeaders: ["ETag"],
-              MaxAgeSeconds: 3600,
-            },
-          ],
-        },
-      })
-    );
-  } catch (e) {
-    console.error("CORS setup skipped:", e.message);
-  }
-}
-ensureCors();
+// NOTE: R2 bucket CORS must be configured in the Cloudflare dashboard (the S3-compatible
+// API does not implement PutBucketCors). See README for the exact CORS rule to add.
 
 const app = express();
 app.use(express.json());
