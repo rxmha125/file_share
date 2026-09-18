@@ -81,7 +81,12 @@ function safeKey(originalName) {
     .replace(/[^a-zA-Z0-9.\-_ ]/g, "")
     .replace(/\s+/g, "_")
     .slice(0, 80);
-  return `${Date.now()}-${crypto.randomBytes(4).toString("hex")}-${safe}`;
+  const now = new Date();
+  const yy = now.getUTCFullYear();
+  const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const folder1 = crypto.randomBytes(4).toString("hex"); // 8 hex chars
+  const folder2 = crypto.randomBytes(2).toString("hex"); // 4 hex chars
+  return `files/${yy}/${mm}/${folder1}/${folder2}/${safe}`;
 }
 
 // List files
@@ -97,15 +102,18 @@ app.get("/api/files", async (req, res) => {
       .filter((o) => o.Size > 0)
       .map((o) => {
         const key = o.Key;
-        const parts = key.split("-");
-        const namePart = parts.slice(2).join("-") || key;
-        const ts = parseInt(parts[0], 10);
+        // New format: files/2026/09/a3f8c1d2/9e7b/name.mp4 → name is last segment
+        // Old format: 1789689940574-a6a48407-name.mp4 → name is parts 2+
+        const segments = key.split("/");
+        const name = segments.length > 1
+          ? segments[segments.length - 1]
+          : (key.split("-").slice(2).join("-") || key);
         return {
           key,
-          name: namePart,
+          name,
           size: o.Size,
           url: `${R2_PUBLIC_BASE_URL}/${key}`,
-          uploaded: isNaN(ts) ? o.LastModified : new Date(ts),
+          uploaded: o.LastModified,
         };
       })
       .sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded));
