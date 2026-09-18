@@ -50,8 +50,17 @@ The browser uploads files **directly to R2** via a presigned PUT URL, which is a
 
 Without this, uploads fail with a CORS preflight error in the browser console.
 
-## Deploying to Vercel
+## Deploying to Render (recommended — handles large files)
 
-1. Push to `main` — Vercel auto-deploys.
-2. Set the 6 `R2_*` environment variables in Vercel (Project → Settings → Environment Variables).
-3. Ensure R2 CORS is configured (above).
+Render runs a real container, so there's no serverless body limit. Streaming uploads work for any file size.
+
+1. Push to `main` (GitHub auto-deploys on Render if connected).
+2. Go to [render.com](https://render.com) → New → Web Service → connect the GitHub repo `rxmha125/file_share`.
+3. Render auto-detects `render.yaml`. Just add the 6 `R2_*` environment variables in the dashboard.
+4. Deploy. You get a public URL like `https://file-share-xxxx.onrender.com`.
+
+No CORS configuration needed — the server uploads to R2 server-side.
+
+## Vercel (small files only)
+
+Vercel works but has a 4.5MB request body limit on the free plan. Only suitable for small files (images, docs). For large files (videos), use Render.

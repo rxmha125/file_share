@@ -237,7 +237,7 @@
 
   <div class="drop" id="drop">
     <div class="big">Drop a file here</div>
-    <div>or click to browse — uploads go straight to R2</div>
+    <div>or click to browse — any file size, straight to R2</div>
     <input type="file" id="fileInput" />
   </div>
   <div class="progress" id="progress" style="display:none;"><div class="bar" id="bar"></div></div>
@@ -373,33 +373,17 @@ async function loadFiles() {
   }
 }
 
-/* ---------- upload via presigned PUT (direct to R2) ---------- */
+/* ---------- upload via streaming POST (server pipes to R2) ---------- */
 async function uploadFile(file) {
   progress.style.display = "block";
   progressLabel.style.display = "block";
   bar.style.width = "0%";
-  progressLabel.textContent = `Requesting upload URL for ${file.name}…`;
+  progressLabel.textContent = `Uploading ${file.name} — 0% of ${fmtSize(file.size)}`;
 
   try {
-    // 1. get presigned PUT URL from our server
-    const presignRes = await fetch(
-      `/api/presign?name=${encodeURIComponent(file.name)}&type=${encodeURIComponent(file.type || "application/octet-stream")}`
-    );
-    if (!presignRes.ok) {
-      const errData = await presignRes.json().catch(() => ({}));
-      throw new Error(
-        `Server refused to issue upload URL (HTTP ${presignRes.status}): ${errData.error || "unknown"}\n` +
-        (errData.detail ? `Detail: ${errData.detail}` : "") +
-        (errData.stack ? `\n\n${errData.stack}` : "")
-      );
-    }
-    const { uploadUrl, key, publicUrl } = await presignRes.json();
-
-    // 2. PUT file directly to R2
-    progressLabel.textContent = `Uploading ${file.name} — 0%`;
-    await new Promise((resolve, reject) => {
+    const result = await new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open("PUT", uploadUrl);
+      xhr.open("POST", `/api/upload?name=${encodeURIComponent(file.name)}&type=${encodeURIComponent(file.type || "application/octet-stream")}`);
       xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
 
       xhr.upload.onprogress = (e) => {
@@ -412,18 +396,19 @@ async function uploadFile(file) {
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          resolve();
+          try { resolve(JSON.parse(xhr.responseText)); }
+          catch { resolve({}); }
         } else {
-          reject(
-            new Error(
-              `R2 upload rejected (HTTP ${xhr.status})\n` +
-              `Response: ${xhr.responseText ? xhr.responseText.slice(0, 500) : "(empty)"}`
-            )
-          );
+          let detail = xhr.responseText ? xhr.responseText.slice(0, 600) : "(empty response)";
+          try {
+            const j = JSON.parse(xhr.responseText);
+            detail = j.error + (j.detail ? "\n" + j.detail : "") + (j.stack ? "\n\n" + j.stack : "");
+          } catch {}
+          reject(new Error(`Upload rejected by server (HTTP ${xhr.status})\n${detail}`));
         }
       };
-      xhr.onerror = () => reject(new Error("Network error during upload to R2. Check your connection or R2 CORS config."));
-      xhr.send(file);
+      xhr.onerror = () => reject(new Error("Network error during upload. The server may have timed out or the file is too large for the hosting platform."));
+      xhr.send(file); // raw file body — server streams it to R2
     });
 
     progress.style.display = "none";

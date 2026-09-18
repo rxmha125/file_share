@@ -1,14 +1,11 @@
 import "dotenv/config";
 import express from "express";
-import multer from "multer";
 import {
   S3Client,
-  PutObjectCommand,
   ListObjectsV2Command,
   DeleteObjectCommand,
-  GetObjectCommand,
 } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Upload } from "@aws-sdk/lib-storage";
 import path from "path";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
@@ -34,18 +31,48 @@ const s3 = new S3Client({
     accessKeyId: R2_ACCESS_KEY_ID,
     secretAccessKey: R2_SECRET_ACCESS_KEY,
   },
-  // Disable automatic checksums — otherwise the SDK appends x-amz-checksum-*
-  // to presigned URLs, which complicates browser CORS preflights.
   requestChecksumCalculation: "WHEN_REQUIRED",
   responseChecksumValidation: "WHEN_REQUIRED",
 });
 
-// NOTE: R2 bucket CORS must be configured in the Cloudflare dashboard (the S3-compatible
-// API does not implement PutBucketCors). See README for the exact CORS rule to add.
-
 const app = express();
+
+// Streaming upload — pipes the raw request body straight to R2 via multipart upload.
+// No body-parser, no buffering, minimal memory. Works on any real server (Render, VPS, local).
+// The browser sends the file as the raw POST body with Content-Type = file MIME type.
+app.post("/api/upload", async (req, res) => {
+  try {
+    const name = (req.query.name || "file").toString().slice(0, 200);
+    const type = req.headers["content-type"] || "application/octet-stream";
+    const key = safeKey(name);
+
+    const upload = new Upload({
+      client: s3,
+      params: {
+        Bucket: R2_BUCKET_NAME,
+        Key: key,
+        Body: req, // the raw request stream — piped directly to R2
+        ContentType: type,
+      },
+      queueSize: 4,
+      partSize: 1024 * 1024 * 8, // 8MB parts
+    });
+
+    await upload.done();
+
+    res.json({
+      url: `${R2_PUBLIC_BASE_URL}/${key}`,
+      name,
+      key,
+    });
+  } catch (err) {
+    console.error("Upload error:", err);
+    res.status(500).json({ error: "Upload failed", detail: err.message, stack: err.stack });
+  }
+});
+
 app.use(express.json());
-// Serve static frontend in local dev. On Vercel, static files are served by the platform.
+// Serve static frontend in local dev. On Vercel/Render, static files are served by the platform.
 const publicDir = path.join(__dirname, "public");
 app.use(express.static(publicDir));
 
@@ -56,63 +83,6 @@ function safeKey(originalName) {
     .slice(0, 80);
   return `${Date.now()}-${crypto.randomBytes(4).toString("hex")}-${safe}`;
 }
-
-// Presign — returns a one-time PUT URL the browser uploads directly to R2 with.
-// This bypasses Vercel's 4.5MB serverless body limit entirely.
-app.get("/api/presign", async (req, res) => {
-  try {
-    const name = (req.query.name || "file").toString().slice(0, 200);
-    const type = (req.query.type || "application/octet-stream").toString().slice(0, 200);
-    const key = safeKey(name);
-
-    const uploadUrl = await getSignedUrl(
-      s3,
-      new PutObjectCommand({
-        Bucket: R2_BUCKET_NAME,
-        Key: key,
-        ContentType: type,
-      }),
-      { expiresIn: 600 } // 10 min
-    );
-
-    res.json({
-      uploadUrl,
-      key,
-      publicUrl: `${R2_PUBLIC_BASE_URL}/${key}`,
-      name,
-    });
-  } catch (err) {
-    console.error("Presign error:", err);
-    res.status(500).json({ error: "Failed to generate upload URL", detail: err.message, stack: err.stack });
-  }
-});
-
-// Legacy buffered upload — kept for small-file compatibility / local dev.
-// Will fail on Vercel for files > 4.5MB due to serverless body limits. Prefer /api/presign.
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 1024 * 1024 * 1024 * 2 } });
-app.post("/api/upload", upload.single("file"), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: "No file provided" });
-    const key = safeKey(req.file.originalname);
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: R2_BUCKET_NAME,
-        Key: key,
-        Body: req.file.buffer,
-        ContentType: req.file.mimetype || "application/octet-stream",
-      })
-    );
-    res.json({
-      url: `${R2_PUBLIC_BASE_URL}/${key}`,
-      name: req.file.originalname,
-      size: req.file.size,
-      key,
-    });
-  } catch (err) {
-    console.error("Upload error:", err);
-    res.status(500).json({ error: "Upload failed", detail: err.message, stack: err.stack });
-  }
-});
 
 // List files
 app.get("/api/files", async (req, res) => {
@@ -163,7 +133,7 @@ app.delete("/api/files/:key", async (req, res) => {
   }
 });
 
-// Only listen when running locally (not on Vercel serverless)
+// Only listen when running as a standalone server (not on Vercel serverless)
 if (!process.env.VERCEL) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, "0.0.0.0", () => {
