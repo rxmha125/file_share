@@ -1,6 +1,6 @@
 #!/bin/bash
 # File share startup script
-# Starts the Node server + Cloudflare quick tunnel with one command
+# Starts the Node server + Cloudflare named tunnel (share.zenvostudios.com)
 # Usage: bash start.sh
 
 cd "$(dirname "$0")"
@@ -25,12 +25,12 @@ if ! curl -s -o /dev/null -w "" http://localhost:3000/ 2>/dev/null; then
 fi
 echo "Server is running on http://localhost:3000"
 
-# Start cloudflared quick tunnel (no login, no CC, no bandwidth limit)
+# Start cloudflared named tunnel — stable URL: share.zenvostudios.com
 echo ""
 echo "Starting Cloudflare tunnel..."
-echo "Your public URL will appear below:"
+echo "Public URL: https://share.zenvostudios.com"
 echo "========================================"
-"C:/Users/Rx MHA/Downloads/cloudflared.exe" tunnel --url http://localhost:3000 2>&1 &
+"C:/Users/Rx MHA/Downloads/cloudflared.exe" tunnel run fileshare 2>&1 &
 
 # Wait for either process to exit
 wait
