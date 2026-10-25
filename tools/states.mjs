@@ -1,5 +1,6 @@
 /**
- * states.mjs — capture the empty state and the error banner.
+ * states.mjs — capture the states Xe called out: the row dropdown and the
+ * focused search field, in both themes, plus empty + error states.
  */
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -71,44 +72,51 @@ class CDP {
   await cdp.send('Runtime.enable');
   await cdp.send('Page.enable');
   await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+  // headless windows are never "focused", so :focus rules need this
+  await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: true });
   await cdp.send('Page.navigate', { url: 'http://127.0.0.1:3000/' });
-  await sleep(5000);
+  await sleep(5500);
 
-  // ---- empty state ----
-  await cdp.eval(`(() => {
-    state.files = [];
-    render();
-    return 'ok';
-  })()`);
-  await sleep(500);
-  const emptyProbe = await cdp.eval(`(() => {
-    const e = document.querySelector('#empty');
-    const b = e.getBoundingClientRect();
-    return JSON.stringify({
-      shown: e.classList.contains('on'),
-      display: getComputedStyle(e).display,
-      title: document.querySelector('#emptyTitle').textContent,
-      sub: document.querySelector('#emptySub').textContent,
-      btnVisible: getComputedStyle(document.querySelector('#emptyBtn')).display,
-      height: Math.round(b.height),
-    });
-  })()`);
-  console.log('\n=== EMPTY STATE ===\n' + emptyProbe);
-  await cdp.shot('shots/dtray-empty.png');
+  for (const theme of ['dark', 'light']) {
+    await cdp.eval(`localStorage.setItem('dtray.theme','${theme}'); location.reload(); 'ok'`);
+    await sleep(5000);
 
-  // ---- error banner ----
-  await cdp.eval(`(() => {
-    logError('Upload failed — demo.mp4', 'Chunk 3/5 rejected (HTTP 524)\\nOrigin timeout after 100s');
-    return 'ok';
-  })()`);
-  await sleep(400);
-  const errProbe = await cdp.eval(`(() => {
-    const l = document.querySelector('#log');
-    const b = l.getBoundingClientRect();
-    return JSON.stringify({ shown: l.classList.contains('on'), w: Math.round(b.width), h: Math.round(b.height) });
-  })()`);
-  console.log('\n=== ERROR BANNER ===\n' + errProbe);
-  await cdp.shot('shots/dtray-error.png');
+    // focused search
+    await cdp.eval(`(() => {
+      const s = document.querySelector('#search');
+      s.focus();
+      s.value = 'tonight';
+      s.dispatchEvent(new Event('input', { bubbles: true }));
+      return 'ok';
+    })()`);
+    await sleep(500);
+    const searchProbe = await cdp.eval(`(() => {
+      const s = document.querySelector('#search');
+      const cs = getComputedStyle(s);
+      return JSON.stringify({ bg: cs.backgroundColor, shadow: cs.boxShadow, fontSize: cs.fontSize, weight: cs.fontWeight });
+    })()`);
+    console.log(`\n[${theme}] SEARCH FOCUS -> ${searchProbe}`);
+    await cdp.shot(`shots/state-search-${theme}.png`);
+
+    // clear + open the row menu
+    await cdp.eval(`(() => {
+      document.querySelector('#searchClear').click();
+      document.querySelector('#search').blur();
+      const b = document.querySelector('.frow [data-more]');
+      b.click();
+      return 'ok';
+    })()`);
+    await sleep(500);
+    const menuProbe = await cdp.eval(`(() => {
+      const m = document.querySelector('#menu');
+      const cs = getComputedStyle(m);
+      return JSON.stringify({ bg: cs.backgroundColor, shadow: cs.boxShadow, radius: cs.borderRadius, w: Math.round(m.getBoundingClientRect().width) });
+    })()`);
+    console.log(`[${theme}] MENU -> ${menuProbe}`);
+    await cdp.shot(`shots/state-menu-${theme}.png`);
+    await cdp.eval(`document.body.click(); 'ok'`);
+    await sleep(200);
+  }
 
   console.log('\nuncaught:', cdp.errors.length ? cdp.errors : '(none)');
   chrome.kill();

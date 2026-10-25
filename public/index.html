@@ -35,9 +35,10 @@
     --ok:         #146c2e;
 
     --shadow-1:   0 1px 2px rgba(0,0,0,.10), 0 2px 8px rgba(0,0,0,.08);
-    --shadow-2:   0 2px 6px rgba(0,0,0,.14), 0 8px 24px rgba(0,0,0,.14);
+    --shadow-2:   0 1px 3px rgba(60,64,67,.30), 0 4px 12px 3px rgba(60,64,67,.15);
+    --menu:       #ffffff;
 
-    --side-w:     248px;
+    --side-w:     260px;
     --top-h:      64px;
     --r-sm:       8px;
     --r-md:       12px;
@@ -66,7 +67,8 @@
     --ok:         #6dd58c;
 
     --shadow-1:   0 1px 2px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.35);
-    --shadow-2:   0 2px 6px rgba(0,0,0,.5), 0 8px 28px rgba(0,0,0,.5);
+    --shadow-2:   0 1px 3px rgba(0,0,0,.40), 0 4px 12px 3px rgba(0,0,0,.28);
+    --menu:       #2f3033;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -92,7 +94,8 @@
       --ok:         #6dd58c;
 
       --shadow-1:   0 1px 2px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.35);
-      --shadow-2:   0 2px 6px rgba(0,0,0,.5), 0 8px 28px rgba(0,0,0,.5);
+      --shadow-2:   0 1px 3px rgba(0,0,0,.40), 0 4px 12px 3px rgba(0,0,0,.28);
+      --menu:       #2f3033;
     }
   }
 
@@ -104,8 +107,9 @@
     color: var(--text);
     font-family: "Segoe UI Variable Text", -apple-system, BlinkMacSystemFont, "Segoe UI",
                  Roboto, "Helvetica Neue", system-ui, sans-serif;
-    font-size: 14px;
-    line-height: 1.45;
+    font-size: 14.5px;
+    font-weight: 450;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow: hidden;
@@ -154,14 +158,14 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-    padding: 0 12px 12px;
+    padding: 0 20px 16px;
   }
 
   .brand {
     display: flex;
     align-items: center;
     height: var(--top-h);
-    padding-left: 8px;
+    padding-left: 10px;
     flex: 0 0 auto;
   }
   .brand img { height: 38px; width: auto; display: block; }
@@ -181,13 +185,13 @@
     gap: 14px;
     height: 48px;
     padding: 0 20px 0 18px;
-    margin: 4px 0 10px;
+    margin: 4px 0 12px;
     border-radius: var(--r-lg);
     background: var(--raise);
     color: var(--text);
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 500;
-    letter-spacing: .01em;
+    letter-spacing: .005em;
     transition: background .13s ease, box-shadow .13s ease;
   }
   .new-btn:hover { background: var(--raise-2); box-shadow: var(--shadow-1); }
@@ -200,12 +204,13 @@
     display: flex;
     align-items: center;
     gap: 14px;
-    height: 38px;
-    padding: 0 14px;
-    margin-bottom: 1px;
+    height: 42px;
+    padding: 0 18px;
+    margin-bottom: 2px;
     border-radius: 999px;
     color: var(--text);
-    font-size: 13.5px;
+    font-size: 14.5px;
+    font-weight: 450;
     cursor: pointer;
     transition: background .12s ease;
     user-select: none;
@@ -224,7 +229,7 @@
     white-space: nowrap;
   }
   .nav-item .n {
-    font-size: 12px;
+    font-size: 12.5px;
     font-variant-numeric: tabular-nums;
     color: var(--text-3);
     padding-left: 6px;
@@ -234,31 +239,31 @@
   .nav-sep {
     height: 1px;
     background: var(--line);
-    margin: 10px 14px 12px;
+    margin: 12px 18px 14px;
   }
   .nav-cap {
-    font-size: 12px;
+    font-size: 12.5px;
     font-weight: 500;
     color: var(--text-3);
-    padding: 8px 14px 4px;
+    padding: 10px 18px 6px;
     letter-spacing: .01em;
   }
 
   .side-foot {
     flex: 0 0 auto;
-    padding: 10px 14px 2px;
+    padding: 14px 18px 6px;
   }
-  .side-foot .cap {
-    font-size: 12px;
-    color: var(--text-3);
-    margin-bottom: 7px;
+  .side-foot .usage {
+    font-size: 13px;
+    font-weight: 450;
+    color: var(--text-2);
+    margin-bottom: 9px;
   }
   .side-foot .meter {
     height: 4px;
     border-radius: 2px;
     background: var(--hover-2);
     overflow: hidden;
-    margin-bottom: 7px;
   }
   .side-foot .meter i {
     display: block;
@@ -268,13 +273,20 @@
     background: var(--accent);
     transition: width .45s cubic-bezier(.22,1,.36,1);
   }
-  .side-foot .who {
-    font-size: 11.5px;
-    color: var(--text-3);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .side-foot .more {
+    margin-top: 14px;
+    height: 36px;
+    padding: 0 18px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text);
+    display: inline-flex;
+    align-items: center;
+    transition: background .13s ease, border-color .13s ease;
   }
+  .side-foot .more:hover { background: var(--hover); border-color: var(--text-3); }
 
   /* ---------- column ---------- */
   .col {
@@ -289,7 +301,7 @@
     align-items: center;
     gap: 10px;
     height: var(--top-h);
-    padding: 0 14px 0 20px;
+    padding: 0 24px 0 36px;
     flex: 0 0 auto;
   }
 
@@ -309,20 +321,21 @@
   .search input {
     width: 100%;
     height: 48px;
-    padding: 0 46px 0 46px;
+    padding: 0 48px 0 48px;
     border: 0;
     border-radius: 999px;
     background: var(--raise);
     color: var(--text);
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: 450;
     outline: none;
     transition: background .13s ease, box-shadow .13s ease;
   }
   .search input::placeholder { color: var(--text-3); }
   .search input::-webkit-search-cancel-button { display: none; }
   .search input:focus {
-    background: var(--panel);
-    box-shadow: inset 0 0 0 1px var(--line), var(--shadow-1);
+    background: var(--raise-2);
+    box-shadow: inset 0 0 0 1.5px var(--accent);
   }
   .search .x {
     position: absolute;
@@ -383,7 +396,7 @@
     position: relative;
     flex: 1 1 auto;
     min-height: 0;
-    margin: 8px 10px 0 0;
+    margin: 8px 14px 0 0;
     background: var(--panel);
     border-radius: var(--r-lg) var(--r-lg) 0 0;
     overflow: hidden;
@@ -395,7 +408,7 @@
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 22px 28px 40px;
+    padding: 24px 36px 48px;
   }
 
   /* ===================================================================
@@ -408,14 +421,14 @@
     margin-bottom: 20px;
   }
   .phead h1 {
-    font-size: 20px;
-    font-weight: 400;
+    font-size: 22px;
+    font-weight: 500;
     letter-spacing: -.012em;
     color: var(--text);
     min-width: 0;
   }
   .phead .sub {
-    font-size: 12.5px;
+    font-size: 13.5px;
     color: var(--text-3);
     margin-top: 1px;
   }
@@ -471,7 +484,7 @@
   .log-top .ic { color: var(--danger); width: 18px; height: 18px; }
   .log-top .t {
     flex: 1;
-    font-size: 13px;
+    font-size: 13.5px;
     font-weight: 500;
     color: var(--danger);
   }
@@ -512,7 +525,7 @@
   }
   .sec-head:hover { background: var(--hover); }
   .sec-head .t {
-    font-size: 13.5px;
+    font-size: 15px;
     font-weight: 500;
     color: var(--text);
   }
@@ -542,18 +555,19 @@
     max-width: 320px;
   }
   .rcard:hover { background: var(--raise-2); }
-  .rcard .fic { width: 30px; height: 30px; border-radius: 7px; }
+  .rcard .fic { width: 32px; height: 32px; border-radius: 8px; }
   .rcard .fic .ic { width: 17px; height: 17px; }
   .rcard .txt { min-width: 0; flex: 1; }
   .rcard .nm {
-    font-size: 13px;
+    font-size: 14px;
+    font-weight: 450;
     color: var(--text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
   .rcard .mt {
-    font-size: 11.5px;
+    font-size: 12px;
     color: var(--text-3);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -565,21 +579,21 @@
      =================================================================== */
   .thead, .frow {
     display: grid;
-    grid-template-columns: 26px minmax(0, 1fr) 96px 132px 92px 36px;
+    grid-template-columns: 28px minmax(0, 1fr) 100px 136px 96px 36px;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
   }
   .thead {
-    padding: 0 10px 8px;
-    font-size: 12px;
+    padding: 0 12px 9px;
+    font-size: 13px;
     color: var(--text-3);
     border-bottom: 1px solid var(--line);
   }
   .thead .c-size { text-align: right; }
 
   .frow {
-    height: 46px;
-    padding: 0 10px;
+    height: 50px;
+    padding: 0 12px;
     border-radius: var(--r-sm);
     cursor: default;
     transition: background .1s ease;
@@ -587,8 +601,8 @@
   .frow:hover { background: var(--hover); }
 
   .fic {
-    width: 26px; height: 26px;
-    border-radius: 6px;
+    width: 28px; height: 28px;
+    border-radius: 7px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -597,7 +611,7 @@
     color: #fff;
     overflow: hidden;
   }
-  .fic .ic { width: 15px; height: 15px; }
+  .fic .ic { width: 16px; height: 16px; }
   .fic img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .fic.video   { --c: #d93025; }
   .fic.image   { --c: #1a73e8; }
@@ -610,7 +624,8 @@
   .c-name { min-width: 0; }
   .c-name a {
     display: block;
-    font-size: 13.5px;
+    font-size: 14.5px;
+    font-weight: 450;
     color: var(--text);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -620,8 +635,8 @@
   .c-name a:hover { text-decoration: underline; text-underline-offset: 2px; }
 
   .c-type, .c-when, .c-size {
-    font-size: 12.5px;
-    color: var(--text-3);
+    font-size: 13px;
+    color: var(--text-2);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     overflow: hidden;
@@ -707,8 +722,8 @@
     margin-bottom: 16px;
   }
   .empty .ring .ic { width: 26px; height: 26px; }
-  .empty .t { font-size: 15px; color: var(--text); margin-bottom: 4px; }
-  .empty .s { font-size: 13px; max-width: 340px; line-height: 1.5; }
+  .empty .t { font-size: 16px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .empty .s { font-size: 13.5px; max-width: 340px; line-height: 1.5; }
   .empty .btn {
     margin-top: 18px;
     height: 40px;
@@ -785,9 +800,9 @@
     position: fixed;
     z-index: 90;
     min-width: 190px;
-    padding: 6px;
+    padding: 8px;
     border-radius: var(--r-md);
-    background: var(--raise);
+    background: var(--menu);
     box-shadow: var(--shadow-2);
     display: none;
   }
@@ -797,9 +812,10 @@
     align-items: center;
     gap: 12px;
     width: 100%;
-    padding: 9px 11px;
+    padding: 10px 12px;
     border-radius: var(--r-sm);
-    font-size: 13px;
+    font-size: 14px;
+    font-weight: 450;
     text-align: left;
     color: var(--text);
     transition: background .1s ease;
@@ -821,7 +837,7 @@
     color: var(--panel);
     padding: 11px 20px;
     border-radius: 999px;
-    font-size: 13px;
+    font-size: 13.5px;
     font-weight: 500;
     opacity: 0;
     pointer-events: none;
@@ -877,11 +893,11 @@
     .panel { margin: 0; border-radius: 0; }
     .panel-scroll { padding: 16px 14px 40px; }
     .top { padding: 0 10px; }
-    .thead, .frow { grid-template-columns: 26px minmax(0, 1fr) 132px 92px 36px; }
+    .thead, .frow { grid-template-columns: 28px minmax(0, 1fr) 136px 96px 36px; }
     .thead .c-type, .frow .c-type { display: none; }
   }
   @media (max-width: 560px) {
-    .thead, .frow { grid-template-columns: 26px minmax(0, 1fr) 36px; }
+    .thead, .frow { grid-template-columns: 28px minmax(0, 1fr) 36px; }
     .thead .c-size, .frow .c-size { display: none; }
     .thead .c-when, .frow .c-when { display: none; }
     .phead h1 { font-size: 18px; }
@@ -986,9 +1002,9 @@
     </nav>
 
     <div class="side-foot">
-      <div class="cap">Guest storage</div>
+      <div class="usage" id="who">0 B of 10 GB used</div>
       <div class="meter"><i id="meter"></i></div>
-      <div class="who" id="who">Guest</div>
+      <button class="more" id="moreStorage">Get more storage</button>
     </div>
   </aside>
 
@@ -1138,7 +1154,7 @@ const el = {
   dragover: $("#dragover"), title: $("#title"), sub: $("#sub"),
   filesLabel: $("#filesLabel"), avatar: $("#avatar"), who: $("#who"), meter: $("#meter"),
   viewList: $("#viewList"), viewGrid: $("#viewGrid"),
-  themeBtn: $("#themeBtn"), helpBtn: $("#helpBtn"),
+  themeBtn: $("#themeBtn"), helpBtn: $("#helpBtn"), moreStorage: $("#moreStorage"),
 };
 
 /* ===================================================================
@@ -1351,9 +1367,9 @@ function render() {
   $("#n-shared").textContent = live.length;
 
   const used = live.reduce((s, f) => s + (f.size || 0), 0);
-  const CAP = 5 * 1073741824;
+  const CAP = 10 * 1073741824;
   el.meter.style.width = Math.min(100, (used / CAP) * 100).toFixed(1) + "%";
-  el.who.textContent = `${fmtSize(used)} of 5 GB used`;
+  el.who.textContent = `${fmtSize(used)} of 10 GB used`;
 
   // recents strip — only in My Drive / Recent, and only when not searching
   const showRecents = !state.query && (state.view === "my" || state.view === "recent") && live.length > 0;
@@ -1753,6 +1769,7 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
 });
 
 el.helpBtn.onclick = () => toast("Tip: paste a file anywhere, or drag one onto the page");
+el.moreStorage.onclick = () => toast("You're on the free plan — 10 GB per drive");
 
 /* ===================================================================
    Boot
