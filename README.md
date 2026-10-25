@@ -65,6 +65,14 @@ Files under 20MB go up in one request. Larger files are split into 20MB chunks i
 - Each chunk retries up to 3 times with backoff.
 - R2 requires multipart objects to be at least 5MiB — the 20MB chunk size clears that comfortably.
 
+## Typography
+
+Self-hosted **Roboto** variable font (`public/assets/fonts/roboto.woff2`, 42 KB, weights 100–900 in one file), preloaded in `<head>`.
+
+Segoe UI was the problem behind two rounds of "the text is too thin": it has a small x-height and thin stems, so at 14–15px it reads much lighter than the reference. Roboto has a larger x-height and heavier stems at the same px, which is why Google's own products read the way they do.
+
+Weights: body / nav / file names **475**, headings and column headers **500**, secondary cells **400**. Roboto is variable, so the fractional 475 is a real weight, not a rounded one.
+
 ## UI
 
 Drive-inspired app shell: sidebar nav, top search, list/grid toggle, per-file action menu, trash, storage meter.
