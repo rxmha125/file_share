@@ -35,7 +35,9 @@ Every visitor gets an anonymous guest account on first visit:
 - `GET /api/guest/verify` — validates a stored session
 - The browser persists the credentials in `localStorage` under `dtray.guest.v1` and restores the same drive on return visits.
 
-Guest state is held in memory on the server (`GUEST_STORE`). Uploads, listings and deletes are all scoped to the requesting guest, and multipart uploads carry a `guest` metadata tag on the R2 object.
+Guest state is held in memory on the server (`GUEST_STORE`). Uploads and deletes require a valid guest session, and multipart uploads carry a `guest` metadata tag on the R2 object.
+
+**Current limitation:** `GET /api/files` lists every object in the bucket, not just the caller's. That is deliberate for now — the drive is effectively shared, and existing files predate guest tagging, so filtering by guest would hide them. Scoping the listing per guest is the next step once the tag is backfilled; see `requireGuest` and the `Metadata: { guest }` on upload in `server.js`.
 
 This is deliberately shaped so a real account system can replace it later without reworking the upload path — the guest id becomes the account id and the token becomes the session token.
 
@@ -67,9 +69,31 @@ Files under 20MB go up in one request. Larger files are split into 20MB chunks i
 
 Drive-inspired app shell: sidebar nav, top search, list/grid toggle, per-file action menu, trash, storage meter.
 
-- Flat surfaces, no gradients, no coloured borders on containers.
+- Two-tone shell — the sidebar and topbar share one surface and read as a single connected frame; content sits on a darker inset panel with a 16px top radius.
+- Flat surfaces, no gradients, no coloured borders on containers. The only shadows are on the popup menu and the upload tray.
+- Icons are **[Hugeicons](https://hugeicons.com)** (stroke-rounded, free set), compiled into an inline SVG sprite. See below.
 - Follows system light/dark by default; the toggle pins a theme in `localStorage` under `dtray.theme`.
-- Drag-drop anywhere on the page, paste-to-upload, and a copyable error log pinned at the top of the content area.
+- Drag-drop anywhere on the page, paste-to-upload, and a copyable error banner at the top of the content area.
+
+## Icons
+
+Icons come from `@hugeicons/core-free-icons` and are compiled to a `<symbol>` sprite that gets inlined into `public/index.html` between the `ICON_SPRITE:START` / `ICON_SPRITE:END` markers.
+
+```bash
+npm install          # pulls the devDependency
+npm run icons        # rebuild public/assets/icons.sprite.html + re-inline it
+```
+
+To add an icon, add an entry to the `ICONS` map in `tools/build_icons.mjs` (sprite id → Hugeicons module name) and re-run `npm run icons`. The sprite is committed, so the app runs without the package installed.
+
+## Brand assets
+
+`public/assets/` holds the web-ready Dtray lockups. They are generated from the approved source artwork by `tools/prep_assets.py`, which crops the transparent margins and emits:
+
+- `dtray-logo-dark-text.png` — for light backgrounds
+- `dtray-logo-white-text.png` — for dark backgrounds (the wordmark must flip with the theme)
+- `dtray-symbol*.png` — the mark alone, at several sizes
+- `favicon.png`
 
 ## Notes
 

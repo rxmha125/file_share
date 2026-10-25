@@ -117,7 +117,7 @@ const main = async () => {
 
   // ---------- 1. open the row action menu on the first row ----------
   const moreBox = await cdp.eval(`(() => {
-    const b = document.querySelector('.file-row [data-more]');
+    const b = document.querySelector('.frow [data-more]');
     if (!b) return null;
     b.scrollIntoView({block:'center'});
     const r = b.getBoundingClientRect();
@@ -130,13 +130,13 @@ const main = async () => {
     await sleep(150);
     await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
     await sleep(400);
-    await cdp.eval(`document.querySelector('.file-row [data-more]').click(); 'ok'`);
+    await cdp.eval(`document.querySelector('.frow [data-more]').click(); 'ok'`);
     await sleep(500);
     const menuProbe = await cdp.eval(`(() => {
       const m = document.querySelector('#menu');
       const r = m.getBoundingClientRect();
       return JSON.stringify({
-        shown: m.classList.contains('show'),
+        shown: m.classList.contains('on'),
         display: getComputedStyle(m).display,
         items: Array.from(m.querySelectorAll('button[data-act]')).map(b => b.dataset.act),
         inViewport: r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth,
@@ -158,9 +158,9 @@ const main = async () => {
   })()`);
   await sleep(600);
   const searchProbe = await cdp.eval(`JSON.stringify({
-    title: document.querySelector('#viewTitle').textContent,
-    sub: document.querySelector('#viewSub').textContent,
-    rows: document.querySelectorAll('.file-row').length,
+    title: document.querySelector('#title').textContent,
+    sub: document.querySelector('#sub').textContent,
+    rows: document.querySelectorAll('.frow').length,
     allMatch: Array.from(document.querySelectorAll('.file-name')).every(n => n.textContent.toLowerCase().includes('mp4')),
   })`);
   console.log('\n=== SEARCH PROBE ===\n' + searchProbe);
@@ -173,7 +173,7 @@ const main = async () => {
     const out = {};
     for (const item of document.querySelectorAll('.nav-item')) {
       item.click();
-      out[item.dataset.view] = document.querySelectorAll('.file-row').length;
+      out[item.dataset.view] = document.querySelectorAll('.frow').length;
     }
     document.querySelector('.nav-item[data-view="my"]').click();
     return JSON.stringify(out);
@@ -203,7 +203,7 @@ const main = async () => {
   await sleep(2500);
   const afterUpload = await cdp.eval(`JSON.stringify({
     firstFile: document.querySelector('.file-name')?.textContent,
-    rows: document.querySelectorAll('.file-row').length,
+    rows: document.querySelectorAll('.frow').length,
     toast: document.querySelector('#toast').textContent,
   })`);
   console.log('\n=== AFTER UPLOAD ===\n' + afterUpload);

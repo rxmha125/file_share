@@ -143,7 +143,7 @@ const main = async () => {
   // ---- probe DOM state ----
   const probe = await cdp.eval(`(() => {
     const g = localStorage.getItem('dtray.guest.v1');
-    const rows = document.querySelectorAll('.file-row');
+    const rows = document.querySelectorAll('.frow');
     const logo = document.querySelector('.brand img');
     const vis = logo ? getComputedStyle(logo).display : 'none';
     return JSON.stringify({
@@ -154,15 +154,15 @@ const main = async () => {
       guestId: g ? JSON.parse(g).guestId : null,
       fileRows: rows.length,
       navItems: document.querySelectorAll('.nav-item').length,
-      activeNav: document.querySelector('.nav-item.active')?.dataset?.view,
-      title: document.querySelector('#viewTitle')?.textContent,
+      activeNav: document.querySelector('.nav-item.on')?.dataset?.view,
+      title: document.querySelector('#title')?.textContent,
       logoVisible: vis,
       logoSrc: logo?.getAttribute('src'),
       logoNatural: logo ? logo.naturalWidth + 'x' + logo.naturalHeight : null,
       emptyVisible: getComputedStyle(document.querySelector('#empty')).display,
-      storageUsed: document.querySelector('#storageUsed')?.textContent,
-      guestLabel: document.querySelector('#guestIdLabel')?.textContent,
-      errorLogShown: document.querySelector('#log').classList.contains('show'),
+      storageUsed: document.querySelector('#who')?.textContent,
+      guestLabel: document.querySelector('#who')?.textContent,
+      errorLogShown: document.querySelector('#log').classList.contains('on'),
       logText: document.querySelector('#logBody')?.textContent?.slice(0,200) || '',
       bodyBg: getComputedStyle(document.body).backgroundColor,
       bodyFg: getComputedStyle(document.body).color,
@@ -183,8 +183,8 @@ const main = async () => {
       bodyFg: getComputedStyle(document.body).color,
       logoShownSrc: shown?.getAttribute('src'),
       rootClass: document.documentElement.className,
-      fileRows: document.querySelectorAll('.file-row').length,
-      guestLabel: document.querySelector('#guestIdLabel')?.textContent,
+      fileRows: document.querySelectorAll('.frow').length,
+      guestLabel: document.querySelector('#who')?.textContent,
     }, null, 2);
   })()`);
   console.log('\n=== DOM PROBE (forced dark) ===\n' + darkProbe);
@@ -215,7 +215,7 @@ const main = async () => {
   });
   await cdp.eval(`document.querySelector('#viewList').click(); 'ok'`);
   await sleep(700);
-  const mobileProbe = await cdp.eval(`JSON.stringify({ innerWidth: innerWidth, sidebarTransform: getComputedStyle(document.querySelector('#sidebar')).transform })`);
+  const mobileProbe = await cdp.eval(`JSON.stringify({ innerWidth: innerWidth, sidebarTransform: getComputedStyle(document.querySelector('#side')).transform })`);
   console.log('\n=== MOBILE PROBE ===\n' + mobileProbe);
   await cdp.shot(path.join(OUTDIR, 'dtray-mobile.png'));
 

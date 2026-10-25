@@ -4,344 +4,359 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Dtray</title>
-<meta name="description" content="Dtray — drop a file, get a link. Fast, private, no account needed." />
-<meta name="theme-color" content="#1f2225" />
+<meta name="description" content="Dtray — drop a file, get a link." />
+<meta name="theme-color" content="#1b1b1b" />
 <link rel="icon" href="/assets/favicon.png" />
 <style>
   /* ===================================================================
-     Dtray — design tokens
-     Palette follows a Drive-like dark shell: near-black surfaces, one
-     blue accent, no gradients, no coloured borders on containers.
+     Dtray — tokens
+     Two-tone shell: sidebar and topbar share one surface and read as a
+     single connected frame; the content sits on a darker inset panel.
      =================================================================== */
   :root {
-    --bg:            #ffffff;
-    --surface:       #f8f9fa;
-    --surface-2:     #f1f3f4;
-    --surface-3:     #e8eaed;
-    --sidebar:       #ffffff;
-    --topbar:        #ffffff;
-    --panel:         #ffffff;
+    --shell:      #f0f4f9;
+    --panel:      #ffffff;
+    --raise:      #e9eef6;
+    --raise-2:    #dde3ed;
+    --hover:      rgba(0,0,0,.045);
+    --hover-2:    rgba(0,0,0,.07);
 
-    --text:          #1f2225;
-    --text-2:        #5f6368;
-    --text-3:        #80868b;
+    --active:     #c2e7ff;
+    --active-fg:  #001d35;
 
-    --accent:        #0b57d0;
-    --accent-soft:   #e8f0fe;
-    --accent-text:   #ffffff;
+    --text:       #1f1f1f;
+    --text-2:     #444746;
+    --text-3:     #5e5e5e;
 
-    --blue:          #1a73e8;
-    --green:         #16c464;
-    --yellow:        #f9ab00;
+    --line:       #e6e8e8;
+    --accent:     #0b57d0;
+    --danger:     #b3261e;
+    --danger-bg:  #fce8e6;
+    --ok:         #146c2e;
 
-    --hover:         #f1f3f4;
-    --active:        #e8f0fe;
-    --divider:       #eceef0;
+    --shadow-1:   0 1px 2px rgba(0,0,0,.10), 0 2px 8px rgba(0,0,0,.08);
+    --shadow-2:   0 2px 6px rgba(0,0,0,.14), 0 8px 24px rgba(0,0,0,.14);
 
-    --danger:        #d93025;
-    --danger-soft:   #fce8e6;
-    --success:       #188038;
+    --side-w:     248px;
+    --top-h:      64px;
+    --r-sm:       8px;
+    --r-md:       12px;
+    --r-lg:       16px;
+  }
 
-    --radius:        8px;
-    --radius-lg:     12px;
-    --sidebar-w:     256px;
-    --topbar-h:      64px;
+  :root.force-dark {
+    --shell:      #1b1b1b;
+    --panel:      #131314;
+    --raise:      #282a2c;
+    --raise-2:    #37393b;
+    --hover:      rgba(255,255,255,.06);
+    --hover-2:    rgba(255,255,255,.10);
 
-    --shadow-pop:    0 1px 2px rgba(60,64,67,.3), 0 2px 6px 2px rgba(60,64,67,.15);
+    --active:     #004a77;
+    --active-fg:  #c2e7ff;
+
+    --text:       #e3e3e3;
+    --text-2:     #a8aaad;
+    --text-3:     #8e9091;
+
+    --line:       #2a2b2c;
+    --accent:     #8ab4f8;
+    --danger:     #f28b82;
+    --danger-bg:  rgba(242,139,130,.10);
+    --ok:         #6dd58c;
+
+    --shadow-1:   0 1px 2px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.35);
+    --shadow-2:   0 2px 6px rgba(0,0,0,.5), 0 8px 28px rgba(0,0,0,.5);
   }
 
   @media (prefers-color-scheme: dark) {
-    :root {
-      --bg:            #202124;
-      --surface:       #1b1c1d;
-      --surface-2:     #292a2b;
-      --surface-3:     #303134;
-      --sidebar:       #1b1c1d;
-      --topbar:        #282a2c;
-      --panel:         #1b1c1d;
+    :root:not(.force-light) {
+      --shell:      #1b1b1b;
+      --panel:      #131314;
+      --raise:      #282a2c;
+      --raise-2:    #37393b;
+      --hover:      rgba(255,255,255,.06);
+      --hover-2:    rgba(255,255,255,.10);
 
-      --text:          #e8eaed;
-      --text-2:        #9aa0a6;
-      --text-3:        #80868b;
+      --active:     #004a77;
+      --active-fg:  #c2e7ff;
 
-      --accent:        #8ab4f8;
-      --accent-soft:   #283142;
-      --accent-text:   #202124;
+      --text:       #e3e3e3;
+      --text-2:     #a8aaad;
+      --text-3:     #8e9091;
 
-      --hover:         #292a2b;
-      --active:        #283142;
-      --divider:       #303134;
+      --line:       #2a2b2c;
+      --accent:     #8ab4f8;
+      --danger:     #f28b82;
+      --danger-bg:  rgba(242,139,130,.10);
+      --ok:         #6dd58c;
 
-      --danger:        #f28b82;
-      --danger-soft:   #2d1f1e;
-      --success:       #81c995;
-
-      --shadow-pop:    0 1px 2px rgba(0,0,0,.5), 0 2px 6px 2px rgba(0,0,0,.3);
+      --shadow-1:   0 1px 2px rgba(0,0,0,.4), 0 2px 8px rgba(0,0,0,.35);
+      --shadow-2:   0 2px 6px rgba(0,0,0,.5), 0 8px 28px rgba(0,0,0,.5);
     }
-  }
-
-  /* Explicit theme override — wins over the media query so the toggle
-     button can pin light or dark regardless of the OS setting. */
-  :root.force-dark {
-    --bg:            #202124;
-    --surface:       #1b1c1d;
-    --surface-2:     #292a2b;
-    --surface-3:     #303134;
-    --sidebar:       #1b1c1d;
-    --topbar:        #282a2c;
-    --panel:         #1b1c1d;
-
-    --text:          #e8eaed;
-    --text-2:        #9aa0a6;
-    --text-3:        #80868b;
-
-    --accent:        #8ab4f8;
-    --accent-soft:   #283142;
-    --accent-text:   #202124;
-
-    --hover:         #292a2b;
-    --active:        #283142;
-    --divider:       #303134;
-
-    --danger:        #f28b82;
-    --danger-soft:   #2d1f1e;
-    --success:       #81c995;
-
-    --shadow-pop:    0 1px 2px rgba(0,0,0,.5), 0 2px 6px 2px rgba(0,0,0,.3);
-  }
-  :root.force-light {
-    --bg:            #ffffff;
-    --surface:       #f8f9fa;
-    --surface-2:     #f1f3f4;
-    --surface-3:     #e8eaed;
-    --sidebar:       #ffffff;
-    --topbar:        #ffffff;
-    --panel:         #ffffff;
-
-    --text:          #1f2225;
-    --text-2:        #5f6368;
-    --text-3:        #80868b;
-
-    --accent:        #0b57d0;
-    --accent-soft:   #e8f0fe;
-    --accent-text:   #ffffff;
-
-    --hover:         #f1f3f4;
-    --active:        #e8f0fe;
-    --divider:       #eceef0;
-
-    --danger:        #d93025;
-    --danger-soft:   #fce8e6;
-    --success:       #188038;
-
-    --shadow-pop:    0 1px 2px rgba(60,64,67,.3), 0 2px 6px 2px rgba(60,64,67,.15);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body {
     height: 100%;
-    background: var(--bg);
+    background: var(--shell);
     color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif;
+    font-family: "Segoe UI Variable Text", -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Roboto, "Helvetica Neue", system-ui, sans-serif;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.45;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow: hidden;
+    color-scheme: light dark;
   }
+  :root.force-dark { color-scheme: dark; }
+  :root.force-light { color-scheme: light; }
 
-  button, input { font-family: inherit; font-size: inherit; color: inherit; }
-  button { background: none; border: none; cursor: pointer; }
-  a { color: inherit; }
-  ::selection { background: var(--accent-soft); color: var(--text); }
+  button, input { font: inherit; color: inherit; }
+  button { background: none; border: 0; cursor: pointer; }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--active); color: var(--active-fg); }
 
-  /* scrollbars — thin and quiet */
-  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar { width: 12px; height: 12px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 6px; border: 3px solid transparent; background-clip: content-box; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--text-3); background-clip: content-box; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--text-3); opacity: .4;
+    border-radius: 8px; border: 4px solid transparent; background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-2); background-clip: content-box; }
+
+  /* icons */
+  .ic {
+    width: 20px; height: 20px;
+    flex: 0 0 auto;
+    display: block;
+    pointer-events: none;
+  }
+  .ic-16 { width: 16px; height: 16px; }
+  .ic-18 { width: 18px; height: 18px; }
+  .ic-24 { width: 24px; height: 24px; }
 
   /* ===================================================================
-     App shell
+     Shell
      =================================================================== */
   .app {
     display: grid;
-    grid-template-columns: var(--sidebar-w) 1fr;
-    grid-template-rows: var(--topbar-h) 1fr;
-    grid-template-areas:
-      "side top"
-      "side main";
+    grid-template-columns: var(--side-w) minmax(0, 1fr);
     height: 100vh;
     height: 100dvh;
+    background: var(--shell);
   }
 
-  /* ---------- sidebar ---------- */
-  .sidebar {
-    grid-area: side;
-    background: var(--sidebar);
+  /* ---------- sidebar (shares the shell surface with the topbar) ---------- */
+  .side {
     display: flex;
     flex-direction: column;
     min-height: 0;
-    padding: 0 12px;
+    padding: 0 12px 12px;
   }
 
   .brand {
     display: flex;
     align-items: center;
-    gap: 10px;
-    height: var(--topbar-h);
-    padding-left: 4px;
-    flex-shrink: 0;
+    height: var(--top-h);
+    padding-left: 8px;
+    flex: 0 0 auto;
   }
-  .brand img { height: 42px; width: auto; display: block; }
-  .brand .logo-dark  { display: block; }
-  .brand .logo-light { display: none; }
+  .brand img { height: 38px; width: auto; display: block; }
+  .brand .lg-light { display: none; }
   @media (prefers-color-scheme: dark) {
-    .brand .logo-dark  { display: none; }
-    .brand .logo-light { display: block; }
+    .brand .lg-dark { display: none; }
+    .brand .lg-light { display: block; }
   }
-  :root.force-dark .brand .logo-dark  { display: none; }
-  :root.force-dark .brand .logo-light { display: block; }
-  :root.force-light .brand .logo-dark  { display: block; }
-  :root.force-light .brand .logo-light { display: none; }
+  :root.force-dark .brand .lg-dark { display: none; }
+  :root.force-dark .brand .lg-light { display: block; }
+  :root.force-light .brand .lg-dark { display: block; }
+  :root.force-light .brand .lg-light { display: none; }
 
   .new-btn {
     display: flex;
     align-items: center;
     gap: 14px;
-    width: 100%;
-    height: 44px;
-    padding: 0 16px 0 20px;
-    margin: 8px 0 4px;
-    border-radius: var(--radius);
-    background: var(--surface-2);
+    height: 48px;
+    padding: 0 20px 0 18px;
+    margin: 4px 0 10px;
+    border-radius: var(--r-lg);
+    background: var(--raise);
     color: var(--text);
+    font-size: 14px;
     font-weight: 500;
-    transition: background .15s;
+    letter-spacing: .01em;
+    transition: background .13s ease, box-shadow .13s ease;
   }
-  .new-btn:hover { background: var(--surface-3); }
-  .new-btn svg { width: 21px; height: 21px; flex-shrink: 0; }
+  .new-btn:hover { background: var(--raise-2); box-shadow: var(--shadow-1); }
+  .new-btn:active { background: var(--raise-2); box-shadow: none; }
+  .new-btn .ic { width: 22px; height: 22px; }
 
-  .nav { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 0 8px; }
-  .nav-section {
-    padding: 14px 20px 4px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    color: var(--text-3);
-  }
+  .nav { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+
   .nav-item {
     display: flex;
     align-items: center;
-    gap: 20px;
-    width: 100%;
-    height: 34px;
-    padding: 0 20px 0 16px;
+    gap: 14px;
+    height: 38px;
+    padding: 0 14px;
+    margin-bottom: 1px;
     border-radius: 999px;
     color: var(--text);
     font-size: 13.5px;
-    text-align: left;
-    transition: background .15s;
+    cursor: pointer;
+    transition: background .12s ease;
+    user-select: none;
   }
   .nav-item:hover { background: var(--hover); }
-  .nav-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
-  .nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
-  .nav-item .label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .nav-item .count { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
-  .nav-item.active .count { color: var(--accent); }
+  .nav-item.on {
+    background: var(--active);
+    color: var(--active-fg);
+    font-weight: 500;
+  }
+  .nav-item .label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .nav-item .n {
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-3);
+    padding-left: 6px;
+  }
+  .nav-item.on .n { color: var(--active-fg); opacity: .75; }
+
+  .nav-sep {
+    height: 1px;
+    background: var(--line);
+    margin: 10px 14px 12px;
+  }
+  .nav-cap {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-3);
+    padding: 8px 14px 4px;
+    letter-spacing: .01em;
+  }
 
   .side-foot {
-    flex-shrink: 0;
-    padding: 12px 4px 16px;
-    border-top: 1px solid var(--divider);
-    margin-top: 8px;
+    flex: 0 0 auto;
+    padding: 10px 14px 2px;
   }
-  .side-foot .bar {
+  .side-foot .cap {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-bottom: 7px;
+  }
+  .side-foot .meter {
     height: 4px;
     border-radius: 2px;
-    background: var(--surface-3);
+    background: var(--hover-2);
     overflow: hidden;
-    margin: 4px 0 8px;
+    margin-bottom: 7px;
   }
-  .side-foot .bar i { display: block; height: 100%; background: var(--accent); border-radius: 2px; transition: width .4s ease; }
-  .side-foot .row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 12px;
-    color: var(--text-2);
+  .side-foot .meter i {
+    display: block;
+    height: 100%;
+    width: 0%;
+    border-radius: 2px;
+    background: var(--accent);
+    transition: width .45s cubic-bezier(.22,1,.36,1);
   }
-  .side-foot .row strong { font-weight: 500; color: var(--text); }
+  .side-foot .who {
+    font-size: 11.5px;
+    color: var(--text-3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
-  /* ---------- topbar ---------- */
-  .topbar {
-    grid-area: top;
-    background: var(--topbar);
+  /* ---------- column ---------- */
+  .col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .top {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 0 16px 0 24px;
+    gap: 10px;
+    height: var(--top-h);
+    padding: 0 14px 0 20px;
+    flex: 0 0 auto;
   }
-  .menu-btn { display: none; }
 
   .search {
     position: relative;
-    flex: 1;
-    max-width: 720px;
+    flex: 1 1 auto;
+    max-width: 660px;
+    min-width: 0;
   }
-  .search svg.mag {
+  .search .ic {
     position: absolute;
-    left: 14px; top: 50%;
+    left: 15px; top: 50%;
     transform: translateY(-50%);
-    width: 20px; height: 20px;
     color: var(--text-2);
-    pointer-events: none;
+    width: 21px; height: 21px;
   }
   .search input {
     width: 100%;
-    height: 46px;
-    padding: 0 48px 0 44px;
-    border: none;
-    border-radius: var(--radius-lg);
-    background: var(--surface-2);
+    height: 48px;
+    padding: 0 46px 0 46px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--raise);
     color: var(--text);
+    font-size: 14px;
     outline: none;
-    transition: background .15s, box-shadow .15s;
+    transition: background .13s ease, box-shadow .13s ease;
   }
   .search input::placeholder { color: var(--text-3); }
+  .search input::-webkit-search-cancel-button { display: none; }
   .search input:focus {
     background: var(--panel);
-    box-shadow: 0 0 0 2px var(--accent);
+    box-shadow: inset 0 0 0 1px var(--line), var(--shadow-1);
   }
-  .search .clear {
+  .search .x {
     position: absolute;
     right: 8px; top: 50%;
     transform: translateY(-50%);
-    width: 32px; height: 32px;
+    width: 34px; height: 34px;
     border-radius: 50%;
     display: none;
     align-items: center;
     justify-content: center;
     color: var(--text-2);
   }
-  .search .clear:hover { background: var(--surface-3); }
-  .search.has-value .clear { display: flex; }
-  .search .clear svg { width: 18px; height: 18px; }
+  .search .x:hover { background: var(--hover-2); }
+  .search.filled .x { display: flex; }
 
-  .top-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
-  .icon-btn {
+  .top-right {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+
+  .ib {
     width: 40px; height: 40px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--text-2);
-    transition: background .15s, color .15s;
+    transition: background .12s ease, color .12s ease;
   }
-  .icon-btn:hover { background: var(--hover); color: var(--text); }
-  .icon-btn svg { width: 22px; height: 22px; }
+  .ib:hover { background: var(--hover); color: var(--text); }
+  .ib .ic { width: 21px; height: 21px; }
 
   .avatar {
     width: 32px; height: 32px;
@@ -354,712 +369,818 @@
     color: #fff;
     background: var(--accent);
     margin-left: 8px;
-    flex-shrink: 0;
+    flex: 0 0 auto;
     user-select: none;
   }
-  .avatar.guest { background: linear-gradient(0deg, var(--blue), var(--green)); }
-  @media (prefers-color-scheme: dark) { .avatar.guest { background: var(--surface-3); color: var(--text); } }
+  @media (prefers-color-scheme: dark) {
+    .avatar { color: #131314; }
+  }
+  :root.force-dark .avatar { color: #131314; }
+  :root.force-light .avatar { color: #fff; }
 
-  /* ---------- main ---------- */
-  .main {
-    grid-area: main;
+  /* ---------- content panel ---------- */
+  .panel {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 8px 10px 0 0;
+    background: var(--panel);
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .panel-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    background: var(--bg);
-    min-width: 0;
+    padding: 22px 28px 40px;
   }
-  .main-inner { padding: 20px 24px 80px; max-width: 1440px; }
-
-  .page-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 20px;
-    margin-bottom: 18px;
-  }
-  .page-head h1 {
-    font-size: 22px;
-    font-weight: 400;
-    letter-spacing: -.01em;
-    color: var(--text);
-  }
-  .page-head .sub { font-size: 13px; color: var(--text-2); margin-top: 2px; }
-
-  .section-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-2);
-    margin: 24px 0 4px;
-  }
-  .section-label svg { width: 16px; height: 16px; }
 
   /* ===================================================================
-     Error log — flat, top of the page, copyable
+     Panel header
+     =================================================================== */
+  .phead {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .phead h1 {
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: -.012em;
+    color: var(--text);
+    min-width: 0;
+  }
+  .phead .sub {
+    font-size: 12.5px;
+    color: var(--text-3);
+    margin-top: 1px;
+  }
+  .phead .right {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+
+  .seg {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 999px;
+    background: var(--raise);
+  }
+  .seg button {
+    width: 34px; height: 30px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-2);
+    transition: background .12s ease, color .12s ease;
+  }
+  .seg button:hover { color: var(--text); }
+  .seg button.on {
+    background: var(--active);
+    color: var(--active-fg);
+  }
+  .seg .ic { width: 18px; height: 18px; }
+
+  /* ===================================================================
+     Error banner
      =================================================================== */
   .log {
     display: none;
-    margin-bottom: 20px;
-    background: var(--danger-soft);
-    border-radius: var(--radius);
+    margin-bottom: 18px;
+    border-radius: var(--r-md);
+    background: var(--danger-bg);
     overflow: hidden;
   }
-  .log.show { display: block; }
-  .log-head {
+  .log.on { display: block; }
+  .log-top {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px;
+    gap: 9px;
+    padding: 11px 14px;
   }
-  .log-head .title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: .03em;
-    text-transform: uppercase;
+  .log-top .ic { color: var(--danger); width: 18px; height: 18px; }
+  .log-top .t {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 500;
     color: var(--danger);
   }
-  .log-head .title svg { width: 16px; height: 16px; }
-  .log-head .actions { display: flex; gap: 4px; }
-  .log-head button {
-    font-size: 12px;
+  .log-top .acts { display: flex; gap: 2px; }
+  .log-top button {
+    font-size: 12.5px;
     font-weight: 500;
     color: var(--danger);
     padding: 5px 10px;
-    border-radius: 6px;
-    transition: background .15s;
+    border-radius: 999px;
+    transition: background .12s ease;
   }
-  .log-head button:hover { background: rgba(217,48,37,.12); }
+  .log-top button:hover { background: rgba(242,139,130,.16); }
   .log-body {
-    font-family: "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
-    font-size: 12px;
+    font-family: "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    line-height: 1.65;
     white-space: pre-wrap;
     word-break: break-word;
     color: var(--danger);
     padding: 0 14px 12px;
-    line-height: 1.6;
-    max-height: 260px;
+    max-height: 220px;
     overflow-y: auto;
   }
 
   /* ===================================================================
-     Upload zone — flat, no coloured border
+     Recent strip
      =================================================================== */
-  .uploader {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    padding: 34px 24px;
-    text-align: center;
-    transition: background .15s;
-  }
-  .uploader.over { background: var(--active); }
-  .uploader .ic {
-    width: 52px; height: 52px;
-    margin: 0 auto 12px;
+  .sec-head {
     display: flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: var(--surface-2);
-    color: var(--text-2);
+    gap: 5px;
+    margin: 0 0 12px -5px;
+    padding: 3px 8px 3px 5px;
+    border-radius: var(--r-sm);
+    width: fit-content;
+    transition: background .12s ease;
   }
-  .uploader.over .ic { background: var(--accent); color: var(--accent-text); }
-  .uploader .ic svg { width: 26px; height: 26px; }
-  .uploader h3 { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
-  .uploader p { font-size: 13px; color: var(--text-2); }
-  .uploader .browse {
-    color: var(--accent);
-    font-weight: 500;
-    cursor: pointer;
-    background: none;
-    border: none;
-    padding: 0;
-  }
-  .uploader .browse:hover { text-decoration: underline; }
-  .uploader input { display: none; }
-
-  /* progress */
-  .progress-wrap { display: none; margin-top: 14px; }
-  .progress-wrap.show { display: block; }
-  .progress {
-    height: 3px;
-    background: var(--surface-3);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .progress .bar {
-    height: 100%;
-    width: 0%;
-    background: var(--accent);
-    border-radius: 2px;
-    transition: width .2s ease;
-  }
-  .progress-label {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    font-size: 12.5px;
-    color: var(--text-2);
-    margin-top: 7px;
-  }
-  .progress-label .pct { font-variant-numeric: tabular-nums; flex-shrink: 0; }
-
-  /* ===================================================================
-     File list
-     =================================================================== */
-  .toolbar {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    justify-content: flex-end;
-    margin-bottom: 2px;
-  }
-  .tool-btn {
-    width: 34px; height: 34px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-2);
-    transition: background .15s, color .15s;
-  }
-  .tool-btn:hover { background: var(--hover); color: var(--text); }
-  .tool-btn.on { background: var(--active); color: var(--accent); }
-  .tool-btn svg { width: 20px; height: 20px; }
-
-  .file-head, .file-row {
-    display: grid;
-    grid-template-columns: 42px minmax(0, 2.2fr) minmax(0, 1.3fr) 130px 44px;
-    align-items: center;
-    gap: 12px;
-  }
-  .file-head {
-    padding: 6px 8px;
-    font-size: 12px;
-    color: var(--text-2);
-    border-bottom: 1px solid var(--divider);
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-    z-index: 2;
-  }
-  .file-head .c-owner  { color: var(--text-2); }
-  .file-head .c-size   { text-align: right; }
-
-  .file-row {
-    padding: 9px 8px;
-    border-radius: var(--radius);
-    transition: background .12s;
-  }
-  .file-row:hover { background: var(--hover); }
-
-  .file-ic {
-    width: 36px; height: 36px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: .02em;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-  .file-ic img { width: 100%; height: 100%; object-fit: cover; }
-  .file-ic.vid { background: #d93025; }
-  .file-ic.img { background: #1a73e8; }
-  .file-ic.pdf { background: #e8710a; }
-  .file-ic.zip { background: #5f6368; }
-  .file-ic.doc { background: #1a73e8; }
-  .file-ic.gen { background: #5f6368; }
-
-  .file-name {
-    min-width: 0;
+  .sec-head:hover { background: var(--hover); }
+  .sec-head .t {
     font-size: 13.5px;
+    font-weight: 500;
     color: var(--text);
-    text-decoration: none;
-    display: block;
+  }
+  .sec-head .ic {
+    color: var(--text-3);
+    width: 16px; height: 16px;
+    transition: transform .18s cubic-bezier(.22,1,.36,1);
+  }
+  .sec-head.closed .ic { transform: rotate(-90deg); }
+
+  .recents {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 26px;
+  }
+  .rcard {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 11px 12px;
+    border-radius: var(--r-md);
+    background: var(--raise);
+    cursor: pointer;
+    transition: background .13s ease;
+    min-width: 0;
+    flex: 1 1 0;
+    max-width: 320px;
+  }
+  .rcard:hover { background: var(--raise-2); }
+  .rcard .fic { width: 30px; height: 30px; border-radius: 7px; }
+  .rcard .fic .ic { width: 17px; height: 17px; }
+  .rcard .txt { min-width: 0; flex: 1; }
+  .rcard .nm {
+    font-size: 13px;
+    color: var(--text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .file-name:hover { text-decoration: underline; }
-  .file-sub {
-    font-size: 12px;
+  .rcard .mt {
+    font-size: 11.5px;
     color: var(--text-3);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .file-owner { display: flex; align-items: center; gap: 8px; min-width: 0; }
-  .file-owner .av {
-    width: 24px; height: 24px;
-    border-radius: 50%;
-    background: var(--surface-3);
-    color: var(--text-2);
+
+  /* ===================================================================
+     File table
+     =================================================================== */
+  .thead, .frow {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) 96px 132px 92px 36px;
+    align-items: center;
+    gap: 14px;
+  }
+  .thead {
+    padding: 0 10px 8px;
+    font-size: 12px;
+    color: var(--text-3);
+    border-bottom: 1px solid var(--line);
+  }
+  .thead .c-size { text-align: right; }
+
+  .frow {
+    height: 46px;
+    padding: 0 10px;
+    border-radius: var(--r-sm);
+    cursor: default;
+    transition: background .1s ease;
+  }
+  .frow:hover { background: var(--hover); }
+
+  .fic {
+    width: 26px; height: 26px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
-    font-weight: 600;
-    flex-shrink: 0;
+    flex: 0 0 auto;
+    background: var(--c, #5f6368);
+    color: #fff;
+    overflow: hidden;
   }
-  .file-owner .nm {
-    font-size: 12.5px;
-    color: var(--text-2);
+  .fic .ic { width: 15px; height: 15px; }
+  .fic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .fic.video   { --c: #d93025; }
+  .fic.image   { --c: #1a73e8; }
+  .fic.pdf     { --c: #d93025; }
+  .fic.zip     { --c: #f9ab00; }
+  .fic.doc     { --c: #5f6368; }
+  .fic.audio   { --c: #1e8e3e; }
+  .fic.gen     { --c: #5f6368; }
+
+  .c-name { min-width: 0; }
+  .c-name a {
+    display: block;
+    font-size: 13.5px;
+    color: var(--text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    border-radius: 4px;
   }
-  .file-size {
-    text-align: right;
+  .c-name a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+  .c-type, .c-when, .c-size {
     font-size: 12.5px;
-    color: var(--text-2);
+    color: var(--text-3);
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-  .file-more {
+  .c-size { text-align: right; }
+
+  .fmore {
     width: 32px; height: 32px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-2);
+    color: var(--text-3);
     opacity: 0;
-    transition: opacity .12s, background .15s;
+    transition: opacity .1s ease, background .12s ease;
   }
-  .file-row:hover .file-more { opacity: 1; }
-  .file-more:hover { background: var(--surface-3); }
-  .file-more svg { width: 18px; height: 18px; }
+  .frow:hover .fmore, .fmore:focus-visible { opacity: 1; }
+  .fmore:hover { background: var(--hover-2); color: var(--text); }
 
-  /* grid view */
-  .file-grid {
+  /* grid layout */
+  .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-    gap: 12px;
-    margin-top: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+    gap: 10px;
+    padding-top: 4px;
   }
-  .grid-card {
-    background: var(--surface);
-    border-radius: var(--radius-lg);
-    padding: 16px;
+  .gcard {
+    padding: 8px;
+    border-radius: var(--r-md);
+    background: var(--raise);
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    transition: background .15s;
+    gap: 9px;
+    transition: background .13s ease;
+    min-width: 0;
+    cursor: pointer;
   }
-  .grid-card:hover { background: var(--surface-2); }
-  .grid-card .file-ic { width: 44px; height: 44px; font-size: 13px; }
-  .grid-card .file-name { font-size: 13px; }
-  .grid-card .file-sub { font-size: 11.5px; }
-
-  .empty {
-    padding: 56px 20px;
-    text-align: center;
-    color: var(--text-3);
-    font-size: 14px;
+  .gcard:hover { background: var(--raise-2); }
+  .gcard .prev {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    background: var(--hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .empty svg { width: 44px; height: 44px; margin-bottom: 12px; color: var(--surface-3); }
+  .gcard .prev img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .gcard .prev .fic { width: 44px; height: 44px; border-radius: 10px; }
+  .gcard .prev .fic .ic { width: 22px; height: 22px; }
+  .gcard .txt { padding: 0 3px 3px; min-width: 0; }
+  .gcard .nm {
+    font-size: 12.5px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .gcard .mt { font-size: 11.5px; color: var(--text-3); margin-top: 1px; }
 
   /* ===================================================================
-     Row action menu
+     Empty state
+     =================================================================== */
+  .empty {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 64px 20px 40px;
+    color: var(--text-3);
+  }
+  .empty.on { display: flex; }
+  .empty .ring {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--raise);
+    color: var(--text-2);
+    margin-bottom: 16px;
+  }
+  .empty .ring .ic { width: 26px; height: 26px; }
+  .empty .t { font-size: 15px; color: var(--text); margin-bottom: 4px; }
+  .empty .s { font-size: 13px; max-width: 340px; line-height: 1.5; }
+  .empty .btn {
+    margin-top: 18px;
+    height: 40px;
+    padding: 0 20px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: filter .13s ease;
+  }
+  :root.force-dark .empty .btn { color: #131314; }
+  @media (prefers-color-scheme: dark) { .empty .btn { color: #131314; } }
+  :root.force-light .empty .btn { color: #fff; }
+  .empty .btn:hover { filter: brightness(1.08); }
+
+  /* ===================================================================
+     Upload tray (bottom-left, like a real transfer panel)
+     =================================================================== */
+  .tray {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    z-index: 70;
+    width: 340px;
+    max-width: calc(100vw - 40px);
+    background: var(--raise);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-2);
+    padding: 13px 15px;
+    display: none;
+  }
+  .tray.on { display: block; }
+  .tray-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 10px;
+  }
+  .tray-row .ic { color: var(--accent); width: 20px; height: 20px; }
+  .tray-txt { flex: 1; min-width: 0; }
+  .tray-nm {
+    font-size: 13px;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tray-mt { font-size: 11.5px; color: var(--text-3); }
+  .tray-bar {
+    height: 3px;
+    border-radius: 2px;
+    background: var(--hover-2);
+    overflow: hidden;
+  }
+  .tray-bar i {
+    display: block;
+    height: 100%;
+    width: 0%;
+    border-radius: 2px;
+    background: var(--accent);
+    transition: width .2s ease;
+  }
+  .tray.done .tray-bar i { background: var(--ok); }
+  .tray.err .tray-bar i { background: var(--danger); }
+
+  /* ===================================================================
+     Popup menu
      =================================================================== */
   .menu {
     position: fixed;
-    z-index: 60;
-    min-width: 180px;
-    background: var(--panel);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-pop);
-    padding: 6px 0;
+    z-index: 90;
+    min-width: 190px;
+    padding: 6px;
+    border-radius: var(--r-md);
+    background: var(--raise);
+    box-shadow: var(--shadow-2);
     display: none;
-    overflow: hidden;
   }
-  .menu.show { display: block; }
+  .menu.on { display: block; }
   .menu button {
     display: flex;
     align-items: center;
     gap: 12px;
     width: 100%;
-    padding: 9px 16px;
+    padding: 9px 11px;
+    border-radius: var(--r-sm);
     font-size: 13px;
     text-align: left;
     color: var(--text);
-    transition: background .1s;
+    transition: background .1s ease;
   }
   .menu button:hover { background: var(--hover); }
   .menu button.danger { color: var(--danger); }
-  .menu button svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .menu button .ic { width: 18px; height: 18px; color: inherit; }
 
   /* ===================================================================
-     Toast + drag overlay
+     Toast
      =================================================================== */
   .toast {
     position: fixed;
-    bottom: 28px;
     left: 50%;
-    transform: translateX(-50%) translateY(8px);
+    bottom: 26px;
+    transform: translate(-50%, 10px);
+    z-index: 95;
     background: var(--text);
-    color: var(--bg);
-    padding: 10px 20px;
-    border-radius: var(--radius);
+    color: var(--panel);
+    padding: 11px 20px;
+    border-radius: 999px;
     font-size: 13px;
     font-weight: 500;
     opacity: 0;
     pointer-events: none;
-    transition: opacity .2s, transform .2s;
-    z-index: 90;
+    transition: opacity .18s ease, transform .18s ease;
     max-width: calc(100vw - 40px);
     text-align: center;
   }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.on { opacity: 1; transform: translate(-50%, 0); }
 
-  .drag-overlay {
+  /* ===================================================================
+     Drag overlay
+     =================================================================== */
+  .dragover {
     position: fixed;
     inset: 0;
-    z-index: 80;
-    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    z-index: 85;
     display: none;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(3px);
+    background: color-mix(in srgb, var(--shell) 80%, transparent);
+    backdrop-filter: blur(2px);
   }
-  .drag-overlay.show { display: flex; }
-  .drag-overlay .inner {
+  .dragover.on { display: flex; }
+  .dragover .box {
+    padding: 40px 64px;
+    border-radius: 20px;
     border: 2px dashed var(--accent);
-    border-radius: 16px;
-    padding: 48px 72px;
+    background: var(--panel);
     text-align: center;
     color: var(--accent);
-    background: var(--panel);
   }
-  .drag-overlay svg { width: 46px; height: 46px; margin-bottom: 12px; }
-  .drag-overlay .t { font-size: 17px; font-weight: 500; }
-  .drag-overlay .s { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+  .dragover .ic { width: 40px; height: 40px; margin: 0 auto 12px; }
+  .dragover .t { font-size: 16px; font-weight: 500; }
+  .dragover .s { font-size: 12.5px; color: var(--text-3); margin-top: 3px; }
 
   /* ===================================================================
      Responsive
      =================================================================== */
-  @media (max-width: 860px) {
-    .app {
-      grid-template-columns: 1fr;
-      grid-template-areas: "top" "main";
-    }
-    .sidebar {
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+    .side {
       position: fixed;
-      z-index: 70;
-      top: 0; bottom: 0; left: 0;
-      width: var(--sidebar-w);
+      z-index: 80;
+      inset: 0 auto 0 0;
+      width: var(--side-w);
+      background: var(--shell);
       transform: translateX(-100%);
-      transition: transform .22s cubic-bezier(.22,1,.36,1);
-      box-shadow: var(--shadow-pop);
-      padding-top: 8px;
+      transition: transform .24s cubic-bezier(.22,1,.36,1);
+      box-shadow: var(--shadow-2);
     }
-    .sidebar.open { transform: translateX(0); }
-    .menu-btn { display: flex; }
-    .file-head, .file-row { grid-template-columns: 42px minmax(0, 1fr) 100px 44px; }
-    .file-head .c-owner, .file-row .file-owner { display: none; }
-    .main-inner { padding: 16px 14px 80px; }
-    .topbar { padding: 0 10px 0 10px; }
+    .side.open { transform: translateX(0); }
+    .menu-btn { display: flex !important; }
+    .panel { margin: 0; border-radius: 0; }
+    .panel-scroll { padding: 16px 14px 40px; }
+    .top { padding: 0 10px; }
+    .thead, .frow { grid-template-columns: 26px minmax(0, 1fr) 132px 92px 36px; }
+    .thead .c-type, .frow .c-type { display: none; }
   }
-  @media (max-width: 520px) {
-    .file-head, .file-row { grid-template-columns: 42px minmax(0, 1fr) 44px; }
-    .file-head .c-size, .file-row .file-size { display: none; }
-    .file-head .c-name { display: none; }
+  @media (max-width: 560px) {
+    .thead, .frow { grid-template-columns: 26px minmax(0, 1fr) 36px; }
+    .thead .c-size, .frow .c-size { display: none; }
+    .thead .c-when, .frow .c-when { display: none; }
+    .phead h1 { font-size: 18px; }
+    .recents { flex-wrap: wrap; }
+    .rcard { flex: 1 1 140px; }
   }
 </style>
 </head>
 <body>
 
+<!-- ICON_SPRITE:START -->
+<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+<symbol id="i-home" viewBox="0 0 24 24" fill="none"><path d="M3 11.9896V14.5C3 17.7998 3 19.4497 4.02513 20.4749C5.05025 21.5 6.70017 21.5 10 21.5H14C17.2998 21.5 18.9497 21.5 19.9749 20.4749C21 19.4497 21 17.7998 21 14.5V11.9896C21 10.3083 21 9.46773 20.6441 8.74005C20.2882 8.01237 19.6247 7.49628 18.2976 6.46411L16.2976 4.90855C14.2331 3.30285 13.2009 2.5 12 2.5C10.7991 2.5 9.76689 3.30285 7.70242 4.90855L5.70241 6.46411C4.37533 7.49628 3.71179 8.01237 3.3559 8.74005C3 9.46773 3 10.3083 3 11.9896Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 8V12L14 14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-image" viewBox="0 0 24 24" fill="none"><circle cx="7.5" cy="7.5" r="1.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z" stroke="currentColor" stroke-width="1.5"/><path d="M5 21C9.37246 15.775 14.2741 8.88406 21.4975 13.5424" stroke="currentColor" stroke-width="1.5"/></symbol>
+<symbol id="i-video" viewBox="0 0 24 24" fill="none"><path d="M2 11C2 7.70017 2 6.05025 3.02513 5.02513C4.05025 4 5.70017 4 9 4H10C13.2998 4 14.9497 4 15.9749 5.02513C17 6.05025 17 7.70017 17 11V13C17 16.2998 17 17.9497 15.9749 18.9749C14.9497 20 13.2998 20 10 20H9C5.70017 20 4.05025 20 3.02513 18.9749C2 17.9497 2 16.2998 2 13V11Z" stroke="currentColor" stroke-width="1.5"/><path d="M17 8.90585L17.1259 8.80196C19.2417 7.05623 20.2996 6.18336 21.1498 6.60482C22 7.02628 22 8.42355 22 11.2181V12.7819C22 15.5765 22 16.9737 21.1498 17.3952C20.2996 17.8166 19.2417 16.9438 17.1259 15.198L17 15.0941" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/><circle cx="11.5" cy="9.5" r="1.5" stroke="currentColor" stroke-width="1.5"/></symbol>
+<symbol id="i-file" viewBox="0 0 24 24" fill="none"><path d="M8 7L16 7" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M8 11L12 11" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M13 21.5V21C13 18.1716 13 16.7574 13.8787 15.8787C14.7574 15 16.1716 15 19 15H19.5M20 13.3431V10C20 6.22876 20 4.34315 18.8284 3.17157C17.6569 2 15.7712 2 12 2C8.22877 2 6.34315 2 5.17157 3.17157C4 4.34314 4 6.22876 4 10L4 14.5442C4 17.7892 4 19.4117 4.88607 20.5107C5.06508 20.7327 5.26731 20.9349 5.48933 21.1139C6.58831 22 8.21082 22 11.4558 22C12.1614 22 12.5141 22 12.8372 21.886C12.9044 21.8623 12.9702 21.835 13.0345 21.8043C13.3436 21.6564 13.593 21.407 14.0919 20.9081L18.8284 16.1716C19.4065 15.5935 19.6955 15.3045 19.8478 14.9369C20 14.5694 20 14.1606 20 13.3431Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24" fill="none"><path d="M8 7H16.75C18.8567 7 19.91 7 20.6667 7.50559C20.9943 7.72447 21.2755 8.00572 21.4944 8.33329C22 9.08996 22 10.1433 22 12.25C22 15.7612 22 17.5167 21.1573 18.7779C20.7926 19.3238 20.3238 19.7926 19.7779 20.1573C18.5167 21 16.7612 21 13.25 21H12C7.28595 21 4.92893 21 3.46447 19.5355C2 18.0711 2 15.714 2 11V7.94427C2 6.1278 2 5.21956 2.38032 4.53806C2.65142 4.05227 3.05227 3.65142 3.53806 3.38032C4.21956 3 5.1278 3 6.94427 3C8.10802 3 8.6899 3 9.19926 3.19101C10.3622 3.62712 10.8418 4.68358 11.3666 5.73313L12 7" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24" fill="none"><path d="M9.14339 10.691L9.35031 10.4841C11.329 8.50532 14.5372 8.50532 16.5159 10.4841C18.4947 12.4628 18.4947 15.671 16.5159 17.6497L13.6497 20.5159C11.671 22.4947 8.46279 22.4947 6.48405 20.5159C4.50532 18.5372 4.50532 15.329 6.48405 13.3503L6.9484 12.886" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/><path d="M17.0516 11.114L17.5159 10.6497C19.4947 8.67095 19.4947 5.46279 17.5159 3.48405C15.5372 1.50532 12.329 1.50532 10.3503 3.48405L7.48405 6.35031C5.50532 8.32904 5.50532 11.5372 7.48405 13.5159C9.46279 15.4947 12.671 15.4947 14.6497 13.5159L14.8566 13.309" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24" fill="none"><path d="M19.5 5.5L18.8803 15.5251C18.7219 18.0864 18.6428 19.3671 18.0008 20.2879C17.6833 20.7431 17.2747 21.1273 16.8007 21.416C15.8421 22 14.559 22 11.9927 22C9.42312 22 8.1383 22 7.17905 21.4149C6.7048 21.1257 6.296 20.7408 5.97868 20.2848C5.33688 19.3626 5.25945 18.0801 5.10461 15.5152L4.5 5.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/><path d="M3 5.5H21M16.0557 5.5L15.3731 4.09173C14.9196 3.15626 14.6928 2.68852 14.3017 2.39681C14.215 2.3321 14.1231 2.27454 14.027 2.2247C13.5939 2 13.0741 2 12.0345 2C10.9688 2 10.436 2 9.99568 2.23412C9.8981 2.28601 9.80498 2.3459 9.71729 2.41317C9.32164 2.7167 9.10063 3.20155 8.65861 4.17126L8.05292 5.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/><path d="M9.5 16.5L9.5 10.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/><path d="M14.5 16.5L14.5 10.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24" fill="none"><path d="M12 4V20M20 12H4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24" fill="none"><path d="M17 17L21 21" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24" fill="none"><path d="M16.9991 12C16.9991 14.7614 14.7605 17 11.9991 17C9.23766 17 6.99908 14.7614 6.99908 12C6.99908 9.23858 9.23766 7 11.9991 7C14.7605 7 16.9991 9.23858 16.9991 12Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M12.1247 3.25H11.9997M12.1242 20.75H11.9992M20.75 12.125V12M3.25 12.125V12M18.2752 5.90098L18.1868 5.81259M5.90051 18.275L5.81212 18.1866M18.0987 18.2756L18.187 18.1872M5.72429 5.9012L5.81267 5.81282M12.2497 3.25C12.2497 3.38807 12.1378 3.5 11.9997 3.5C11.8616 3.5 11.7497 3.38807 11.7497 3.25C11.7497 3.11193 11.8616 3 11.9997 3C12.1378 3 12.2497 3.11193 12.2497 3.25ZM12.2492 20.75C12.2492 20.8881 12.1373 21 11.9992 21C11.8611 21 11.7492 20.8881 11.7492 20.75C11.7492 20.6119 11.8611 20.5 11.9992 20.5C12.1373 20.5 12.2492 20.6119 12.2492 20.75ZM20.75 12.25C20.6119 12.25 20.5 12.1381 20.5 12C20.5 11.8619 20.6119 11.75 20.75 11.75C20.8881 11.75 21 11.8619 21 12C21 12.1381 20.8881 12.25 20.75 12.25ZM3.25 12.25C3.11193 12.25 3 12.1381 3 12C3 11.8619 3.11193 11.75 3.25 11.75C3.38807 11.75 3.5 11.8619 3.5 12C3.5 12.1381 3.38807 12.25 3.25 12.25ZM18.3636 5.98937C18.266 6.087 18.1077 6.087 18.01 5.98937C17.9124 5.89174 17.9124 5.73345 18.01 5.63582C18.1077 5.53819 18.266 5.53819 18.3636 5.63582C18.4612 5.73345 18.4612 5.89174 18.3636 5.98937ZM5.9889 18.3634C5.89127 18.461 5.73297 18.461 5.63534 18.3634C5.53771 18.2658 5.53771 18.1075 5.63534 18.0099C5.73297 17.9122 5.89127 17.9122 5.9889 18.0099C6.08653 18.1075 6.08653 18.2658 5.9889 18.3634ZM18.0103 18.364C17.9126 18.2663 17.9126 18.108 18.0103 18.0104C18.1079 17.9128 18.2662 17.9128 18.3638 18.0104C18.4614 18.108 18.4614 18.2663 18.3638 18.364C18.2662 18.4616 18.1079 18.4616 18.0103 18.364ZM5.6359 5.98959C5.53827 5.89196 5.53827 5.73367 5.6359 5.63604C5.73353 5.53841 5.89182 5.53841 5.98945 5.63604C6.08708 5.73367 6.08708 5.89196 5.98945 5.98959C5.89182 6.08722 5.73353 6.08722 5.6359 5.98959Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24" fill="none"><path d="M21.5 14.0784C20.3003 14.7189 18.9301 15.0821 17.4751 15.0821C12.7491 15.0821 8.91792 11.2509 8.91792 6.52485C8.91792 5.06986 9.28105 3.69968 9.92163 2.5C5.66765 3.49698 2.5 7.31513 2.5 11.8731C2.5 17.1899 6.8101 21.5 12.1269 21.5C16.6849 21.5 20.503 18.3324 21.5 14.0784Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M9.5 9.5C9.5 8.11929 10.6193 7 12 7C13.3807 7 14.5 8.11929 14.5 9.5C14.5 10.3569 14.0689 11.1131 13.4117 11.5636C12.7283 12.0319 12 12.6716 12 13.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M12.125 16.75H12M12.25 16.75C12.25 16.8881 12.1381 17 12 17C11.8619 17 11.75 16.8881 11.75 16.75C11.75 16.6119 11.8619 16.5 12 16.5C12.1381 16.5 12.25 16.6119 12.25 16.75Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24" fill="none"><path d="M3.88884 9.66294C4.39329 10 5.09552 10 6.49998 10C7.90445 10 8.60668 10 9.11113 9.66294C9.32951 9.51702 9.51701 9.32952 9.66292 9.11114C9.99998 8.60669 9.99998 7.90446 9.99998 6.5C9.99998 5.09554 9.99998 4.39331 9.66292 3.88886C9.51701 3.67048 9.32951 3.48298 9.11113 3.33706C8.60668 3 7.90445 3 6.49998 3C5.09552 3 4.39329 3 3.88884 3.33706C3.67046 3.48298 3.48296 3.67048 3.33705 3.88886C2.99998 4.39331 2.99998 5.09554 2.99998 6.5C2.99998 7.90446 2.99998 8.60669 3.33705 9.11114C3.48296 9.32952 3.67046 9.51702 3.88884 9.66294Z" stroke="currentColor" stroke-linejoin="round" stroke-width="1.5"/><path d="M14.8888 9.66294C15.3933 10 16.0955 10 17.5 10C18.9044 10 19.6067 10 20.1111 9.66294C20.3295 9.51702 20.517 9.32952 20.6629 9.11114C21 8.60669 21 7.90446 21 6.5C21 5.09554 21 4.39331 20.6629 3.88886C20.517 3.67048 20.3295 3.48298 20.1111 3.33706C19.6067 3 18.9044 3 17.5 3C16.0955 3 15.3933 3 14.8888 3.33706C14.6705 3.48298 14.483 3.67048 14.337 3.88886C14 4.39331 14 5.09554 14 6.5C14 7.90446 14 8.60669 14.337 9.11114C14.483 9.32952 14.6705 9.51702 14.8888 9.66294Z" stroke="currentColor" stroke-linejoin="round" stroke-width="1.5"/><path d="M3.88884 20.6629C4.39329 21 5.09552 21 6.49998 21C7.90445 21 8.60668 21 9.11113 20.6629C9.32951 20.517 9.51701 20.3295 9.66292 20.1111C9.99998 19.6067 9.99998 18.9045 9.99998 17.5C9.99998 16.0955 9.99998 15.3933 9.66292 14.8889C9.51701 14.6705 9.32951 14.483 9.11113 14.3371C8.60668 14 7.90445 14 6.49998 14C5.09552 14 4.39329 14 3.88884 14.3371C3.67046 14.483 3.48296 14.6705 3.33705 14.8889C2.99998 15.3933 2.99998 16.0955 2.99998 17.5C2.99998 18.9045 2.99998 19.6067 3.33705 20.1111C3.48296 20.3295 3.67046 20.517 3.88884 20.6629Z" stroke="currentColor" stroke-linejoin="round" stroke-width="1.5"/><path d="M14.8888 20.6629C15.3933 21 16.0955 21 17.5 21C18.9044 21 19.6067 21 20.1111 20.6629C20.3295 20.517 20.517 20.3295 20.6629 20.1111C21 19.6067 21 18.9045 21 17.5C21 16.0955 21 15.3933 20.6629 14.8889C20.517 14.6705 20.3295 14.483 20.1111 14.3371C19.6067 14 18.9044 14 17.5 14C16.0955 14 15.3933 14 14.8888 14.3371C14.6705 14.483 14.483 14.6705 14.337 14.8889C14 15.3933 14 16.0955 14 17.5C14 18.9045 14 19.6067 14.337 20.1111C14.483 20.3295 14.6705 20.517 14.8888 20.6629Z" stroke="currentColor" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24" fill="none"><path d="M9.12109 5H21.1211" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/><path d="M9.12109 12H21.1211" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/><path d="M9.12109 19H21.1211" stroke="currentColor" stroke-linecap="round" stroke-width="1.5"/><path d="M3.24609 5H3.12109M3.37109 5C3.37109 5.13807 3.25916 5.25 3.12109 5.25C2.98302 5.25 2.87109 5.13807 2.87109 5C2.87109 4.86193 2.98302 4.75 3.12109 4.75C3.25916 4.75 3.37109 4.86193 3.37109 5Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M3.24609 12H3.12109M3.37109 12C3.37109 12.1381 3.25916 12.25 3.12109 12.25C2.98302 12.25 2.87109 12.1381 2.87109 12C2.87109 11.8619 2.98302 11.75 3.12109 11.75C3.25916 11.75 3.37109 11.8619 3.37109 12Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M3.24609 19H3.12109M3.37109 19C3.37109 19.1381 3.25916 19.25 3.12109 19.25C2.98302 19.25 2.87109 19.1381 2.87109 19C2.87109 18.8619 2.98302 18.75 3.12109 18.75C3.25916 18.75 3.37109 18.8619 3.37109 19Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-more" viewBox="0 0 24 24" fill="none"><path d="M11.9967 12.5V12M11.9967 6.5V6M11.9967 18.5V18M12.9967 12.5C12.9967 11.9477 12.549 11.5 11.9967 11.5C11.4444 11.5 10.9967 11.9477 10.9967 12.5C10.9967 13.0523 11.4444 13.5 11.9967 13.5C12.549 13.5 12.9967 13.0523 12.9967 12.5ZM12.9967 6.5C12.9967 5.94772 12.549 5.5 11.9967 5.5C11.4444 5.5 10.9967 5.94772 10.9967 6.5C10.9967 7.05228 11.4444 7.5 11.9967 7.5C12.549 7.5 12.9967 7.05228 12.9967 6.5ZM12.9967 18.5C12.9967 17.9477 12.549 17.5 11.9967 17.5C11.4444 17.5 10.9967 17.9477 10.9967 18.5C10.9967 19.0523 11.4444 19.5 11.9967 19.5C12.549 19.5 12.9967 19.0523 12.9967 18.5Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24" fill="none"><path d="M2.99994 17C2.99994 17.93 2.99994 18.395 3.10216 18.7765C3.37956 19.8117 4.18821 20.6204 5.22348 20.8978C5.60498 21 6.06997 21 6.99994 21L16.9999 21C17.9299 21 18.3949 21 18.7764 20.8978C19.8117 20.6204 20.6203 19.8117 20.8977 18.7765C20.9999 18.395 20.9999 17.93 20.9999 17" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M16.5 7.49993C16.5 7.49993 13.1858 2.99997 12 2.99996C10.8141 2.99995 7.50002 7.49996 7.50002 7.49996M12 3.99996V16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-cloud" viewBox="0 0 24 24" fill="none"><path d="M17.4776 9.01106C17.485 9.01102 17.4925 9.01101 17.5 9.01101C19.9853 9.01101 22 11.0294 22 13.5193C22 15.8398 20.25 17.7508 18 18M17.4776 9.01106C17.4924 8.84606 17.5 8.67896 17.5 8.51009C17.5 5.46695 15.0376 3 12 3C9.12324 3 6.76233 5.21267 6.52042 8.03192M17.4776 9.01106C17.3753 10.1476 16.9286 11.1846 16.2428 12.0165M6.52042 8.03192C3.98398 8.27373 2 10.4139 2 13.0183C2 15.4417 3.71776 17.4632 6 17.9273M6.52042 8.03192C6.67826 8.01687 6.83823 8.00917 7 8.00917C8.12582 8.00917 9.16474 8.38194 10.0005 9.01101" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M12 13L12 21M12 13C11.2998 13 9.99153 14.9943 9.5 15.5M12 13C12.7002 13 14.0085 14.9943 14.5 15.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24" fill="none"><path d="M2.99969 17.0002C2.99969 17.9302 2.99969 18.3952 3.10192 18.7767C3.37932 19.8119 4.18796 20.6206 5.22324 20.898C5.60474 21.0002 6.06972 21.0002 6.99969 21.0002L16.9997 21.0002C17.9297 21.0002 18.3947 21.0002 18.7762 20.898C19.8114 20.6206 20.6201 19.8119 20.8975 18.7767C20.9997 18.3952 20.9997 17.9302 20.9997 17.0002" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M16.4998 11.5002C16.4998 11.5002 13.1856 16.0002 11.9997 16.0002C10.8139 16.0002 7.49976 11.5002 7.49976 11.5002M11.9997 15.0002V3.00016" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24" fill="none"><path d="M7.5 14.5C7.5 11.2002 7.5 9.55025 8.52513 8.52513C9.55025 7.5 11.2002 7.5 14.5 7.5C17.7998 7.5 19.4497 7.5 20.4749 8.52513C21.5 9.55025 21.5 11.2002 21.5 14.5C21.5 17.7998 21.5 19.4497 20.4749 20.4749C19.4497 21.5 17.7998 21.5 14.5 21.5C11.2002 21.5 9.55025 21.5 8.52513 20.4749C7.5 19.4497 7.5 17.7998 7.5 14.5Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M7.5 16.5C6.10355 16.5 5.40533 16.5 4.84402 16.3036C3.83866 15.9518 3.0482 15.1613 2.69641 14.156C2.5 13.5947 2.5 12.8964 2.5 11.5V9.5C2.5 6.20017 2.5 4.55025 3.52513 3.52513C4.55025 2.5 6.20017 2.5 9.5 2.5H11.5C12.8964 2.5 13.5947 2.5 14.156 2.69641C15.1613 3.0482 15.9518 3.83866 16.3036 4.84402C16.5 5.40533 16.5 6.10355 16.5 7.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-external" viewBox="0 0 24 24" fill="none"><path d="M9 6.65032C9 6.65032 15.9383 6.10759 16.9154 7.08463C17.8924 8.06167 17.3496 15 17.3496 15M16.5 7.5L6.5 17.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M12 8V12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M12.125 15.75H12M12.25 15.75C12.25 15.8881 12.1381 16 12 16C11.8619 16 11.75 15.8881 11.75 15.75C11.75 15.6119 11.8619 15.5 12 15.5C12.1381 15.5 12.25 15.6119 12.25 15.75Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24" fill="none"><path d="M4 5L20 5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M4 12L20 12" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M4 19L20 19" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-storage" viewBox="0 0 24 24" fill="none"><path d="M20.7104 8.70122L21.9186 12.7288C21.9578 12.8592 21.9773 12.9244 21.9879 12.9914L21.9908 13.0118C22 13.079 22 13.147 22 13.2831C22 16.7797 22 18.528 20.9812 19.6669C20.8824 19.7774 20.7774 19.8824 20.6669 19.9812C19.528 21 17.7797 21 14.2831 21H9.71685C6.22026 21 4.47197 21 3.33311 19.9812C3.22259 19.8824 3.11765 19.7774 3.01877 19.6669C2 18.528 2 16.7797 2 13.2831C2 13.147 2 13.079 2.00915 13.0118L2.01215 12.9914C2.02269 12.9244 2.04225 12.8592 2.08136 12.7288L3.28963 8.70122C4.11355 5.95484 4.5255 4.58166 5.5884 3.79083C6.6513 3 8.08495 3 10.9522 3H13.0478C15.9151 3 17.3487 3 18.4116 3.79083C19.4745 4.58166 19.8865 5.95484 20.7104 8.70122Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M2 13H22" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M18.125 17H18M14.125 17H14M18.25 17C18.25 17.1381 18.1381 17.25 18 17.25C17.8619 17.25 17.75 17.1381 17.75 17C17.75 16.8619 17.8619 16.75 18 16.75C18.1381 16.75 18.25 16.8619 18.25 17ZM14.25 17C14.25 17.1381 14.1381 17.25 14 17.25C13.8619 17.25 13.75 17.1381 13.75 17C13.75 16.8619 13.8619 16.75 14 16.75C14.1381 16.75 14.25 16.8619 14.25 17Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24" fill="none"><path d="M5 14L8.5 17.5L19 6.5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-chevron" viewBox="0 0 24 24" fill="none"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24" fill="none"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24" fill="none"><path d="M20 21.0001C19.713 17.269 16.7289 14.3151 12.995 14.0662L12 13.9999C11.6446 14.0096 11.3134 14.0225 11.0008 14.0378C7.3 14.2192 4.28417 17.3057 4 21.0001" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><circle cx="12" cy="6.99988" r="4" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-music" viewBox="0 0 24 24" fill="none"><path d="M7 9.5C7 10.8807 5.88071 12 4.5 12C3.11929 12 2 10.8807 2 9.5C2 8.11929 3.11929 7 4.5 7C5.88071 7 7 8.11929 7 9.5ZM7 9.5V2C7.33333 2.5 7.6 4.6 10 5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><circle cx="10.5" cy="19.5" r="2.5" stroke="currentColor" stroke-width="1.5"/><circle cx="20" cy="18" r="2" stroke="currentColor" stroke-width="1.5"/><path d="M13 19.5L13 11C13 10.09 13 9.63502 13.2466 9.35248C13.4932 9.06993 13.9938 9.00163 14.9949 8.86504C18.0085 8.45385 20.2013 7.19797 21.3696 6.42937C21.6498 6.24509 21.7898 6.15295 21.8949 6.20961C22 6.26627 22 6.43179 22 6.76283V17.9259" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M13 13C17.8 13 21 10.6667 22 10" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-archive" viewBox="0 0 24 24" fill="none"><path d="M13 2.50022V3.00043C13 5.83009 13 7.24492 13.8787 8.12398C14.7574 9.00304 16.1716 9.00304 19 9.00304H19.5M14 22C16.4796 21.9641 17.8853 21.7801 18.8284 20.8366C20 19.6645 20 17.7781 20 14.0052V10.6606C20 9.84276 20 9.43383 19.8478 9.06613C19.6955 8.69843 19.4065 8.40927 18.8284 7.83096L14.0919 3.09236C13.593 2.59325 13.3436 2.3437 13.0345 2.19583C12.9702 2.16508 12.9044 2.13778 12.8372 2.11406C12.5141 2 12.1614 2 11.4558 2C8.21082 2 6.58831 2 5.48933 2.88646C5.26731 3.06554 5.06508 3.26787 4.88607 3.48998C4 4.58943 4 6.21265 4 9.45908V14.0052C4 15.1755 4 16.1643 4.03496 17.0065" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M10.5 20.5C10.5 21.3284 9.82843 22 9 22C8.17157 22 7.5 21.3284 7.5 20.5C7.5 19.6716 8.17157 19 9 19C9.82843 19 10.5 19.6716 10.5 20.5Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/><path d="M9 19V17M9 13V11M9 7V5" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+<symbol id="i-chevron-r" viewBox="0 0 24 24" fill="none"><path d="M9.00005 18C9.00005 18 15 13.5811 15 12C15 10.4188 9 6 9 6" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></symbol>
+</svg>
+<!-- ICON_SPRITE:END -->
+
 <div class="app">
-  <!-- ================= sidebar ================= -->
-  <aside class="sidebar" id="sidebar">
+  <!-- ============ sidebar ============ -->
+  <aside class="side" id="side">
     <div class="brand">
-      <img class="logo-dark"  src="/assets/dtray-logo-dark-text.png"  alt="Dtray" />
-      <img class="logo-light" src="/assets/dtray-logo-white-text.png" alt="Dtray" />
+      <img class="lg-dark"  src="/assets/dtray-logo-dark-text.png"  alt="Dtray" />
+      <img class="lg-light" src="/assets/dtray-logo-white-text.png" alt="Dtray" />
     </div>
 
     <button class="new-btn" id="newBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      <svg class="ic"><use href="#i-plus"/></svg>
       <span>New</span>
     </button>
 
     <nav class="nav" id="nav">
-      <div class="nav-item active" data-view="my">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+      <div class="nav-item on" data-view="my">
+        <svg class="ic"><use href="#i-home"/></svg>
         <span class="label">My Drive</span>
-        <span class="count" id="cntMy">0</span>
+        <span class="n" id="n-my">0</span>
       </div>
       <div class="nav-item" data-view="recent">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+        <svg class="ic"><use href="#i-clock"/></svg>
         <span class="label">Recent</span>
-        <span class="count" id="cntRecent">0</span>
-      </div>
-      <div class="nav-item" data-view="images">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="m3 16 5-4 4 3 3-2 6 5"/></svg>
-        <span class="label">Images</span>
-        <span class="count" id="cntImages">0</span>
-      </div>
-      <div class="nav-item" data-view="videos">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="14" height="14" rx="2"/><path d="m16.5 10.5 5-3v9l-5-3z"/></svg>
-        <span class="label">Videos</span>
-        <span class="count" id="cntVideos">0</span>
-      </div>
-      <div class="nav-item" data-view="docs">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
-        <span class="label">Documents</span>
-        <span class="count" id="cntDocs">0</span>
+        <span class="n" id="n-recent">0</span>
       </div>
 
-      <div class="nav-section">Storage</div>
+      <div class="nav-sep"></div>
+      <div class="nav-cap">Library</div>
+
+      <div class="nav-item" data-view="images">
+        <svg class="ic"><use href="#i-image"/></svg>
+        <span class="label">Images</span>
+        <span class="n" id="n-images">0</span>
+      </div>
+      <div class="nav-item" data-view="videos">
+        <svg class="ic"><use href="#i-video"/></svg>
+        <span class="label">Videos</span>
+        <span class="n" id="n-videos">0</span>
+      </div>
+      <div class="nav-item" data-view="docs">
+        <svg class="ic"><use href="#i-file"/></svg>
+        <span class="label">Documents</span>
+        <span class="n" id="n-docs">0</span>
+      </div>
+
+      <div class="nav-sep"></div>
+
       <div class="nav-item" data-view="shared">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+        <svg class="ic"><use href="#i-link"/></svg>
         <span class="label">Shared links</span>
-        <span class="count" id="cntShared">0</span>
+        <span class="n" id="n-shared">0</span>
       </div>
       <div class="nav-item" data-view="trash">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 4h4M9 7v12M15 7v12M6 7l1 14h10l1-14"/></svg>
+        <svg class="ic"><use href="#i-trash"/></svg>
         <span class="label">Trash</span>
       </div>
     </nav>
 
     <div class="side-foot">
-      <div class="row"><span>Guest storage</span><strong id="storageUsed">0 B</strong></div>
-      <div class="bar"><i id="storageBar" style="width:0%"></i></div>
-      <div class="row" style="color:var(--text-3);font-size:11.5px"><span id="guestIdLabel">guest —</span></div>
+      <div class="cap">Guest storage</div>
+      <div class="meter"><i id="meter"></i></div>
+      <div class="who" id="who">Guest</div>
     </div>
   </aside>
 
-  <!-- ================= topbar ================= -->
-  <header class="topbar">
-    <button class="icon-btn menu-btn" id="menuBtn" aria-label="Menu">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-    </button>
-
-    <div class="search" id="searchWrap">
-      <svg class="mag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input type="search" id="search" placeholder="Search in Dtray" autocomplete="off" spellcheck="false" />
-      <button class="clear" id="searchClear" aria-label="Clear search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+  <!-- ============ column ============ -->
+  <div class="col">
+    <header class="top">
+      <button class="ib menu-btn" id="menuBtn" style="display:none" aria-label="Menu">
+        <svg class="ic"><use href="#i-menu"/></svg>
       </button>
-    </div>
 
-    <div class="top-actions">
-      <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">
-        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
-      </button>
-      <button class="icon-btn" id="helpBtn" title="Shortcuts" aria-label="Shortcuts">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .9-1 1.6v.4"/><circle cx="12" cy="17" r=".9" fill="currentColor" stroke="none"/></svg>
-      </button>
-      <div class="avatar guest" id="avatar" title="Guest account">G</div>
-    </div>
-  </header>
-
-  <!-- ================= main ================= -->
-  <main class="main" id="main">
-    <div class="main-inner">
-      <div class="page-head">
-        <div>
-          <h1 id="viewTitle">Welcome to Dtray</h1>
-          <div class="sub" id="viewSub">Your guest drive is ready — drop a file to get a link.</div>
-        </div>
-      </div>
-
-      <!-- error log -->
-      <div class="log" id="log">
-        <div class="log-head">
-          <span class="title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 8.5v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
-            Error log
-          </span>
-          <span class="actions">
-            <button id="logCopy">Copy</button>
-            <button id="logClear">Clear</button>
-          </span>
-        </div>
-        <div class="log-body" id="logBody"></div>
-      </div>
-
-      <!-- uploader -->
-      <div class="uploader" id="drop">
-        <div class="ic">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m7.5 8.5 4.5-4.5 4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-        </div>
-        <h3>Drop files here</h3>
-        <p>or <button class="browse" id="browseBtn">browse your device</button> — any size, links generated instantly</p>
-        <input type="file" id="fileInput" multiple />
-      </div>
-
-      <div class="progress-wrap" id="progressWrap">
-        <div class="progress"><div class="bar" id="bar"></div></div>
-        <div class="progress-label">
-          <span id="progressLabel">Uploading…</span>
-          <span class="pct" id="progressPct">0%</span>
-        </div>
-      </div>
-
-      <!-- file list -->
-      <div class="section-label" id="listLabel">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-        <span id="listLabelText">Your files</span>
-      </div>
-
-      <div class="toolbar">
-        <button class="tool-btn on" id="viewList" title="List view" aria-label="List view">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-        </button>
-        <button class="tool-btn" id="viewGrid" title="Grid view" aria-label="Grid view">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2"/></svg>
+      <div class="search" id="searchWrap">
+        <svg class="ic"><use href="#i-search"/></svg>
+        <input type="search" id="search" placeholder="Search in Dtray" autocomplete="off" spellcheck="false" />
+        <button class="x" id="searchClear" aria-label="Clear search">
+          <svg class="ic ic-18"><use href="#i-close"/></svg>
         </button>
       </div>
 
-      <div id="fileHead" class="file-head">
-        <span></span>
-        <span class="c-name">Name</span>
-        <span class="c-owner">Owner</span>
-        <span class="c-size">Size</span>
-        <span></span>
+      <div class="top-right">
+        <button class="ib" id="themeBtn" aria-label="Toggle theme">
+          <svg class="ic"><use href="#i-sun" id="themeIcon"/></svg>
+        </button>
+        <button class="ib" id="helpBtn" aria-label="Tips">
+          <svg class="ic"><use href="#i-help"/></svg>
+        </button>
+        <div class="avatar" id="avatar">G</div>
       </div>
+    </header>
 
-      <div id="files"></div>
-      <div class="empty" id="empty" style="display:none">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 7.5A2 2 0 0 1 5 5.5h4l2 2.5h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-        <div id="emptyText">No files yet. Drop something above to get started.</div>
+    <main class="panel">
+      <div class="panel-scroll" id="scroll">
+        <div class="log" id="log">
+          <div class="log-top">
+            <svg class="ic"><use href="#i-alert"/></svg>
+            <span class="t" id="logTitle">Something went wrong</span>
+            <span class="acts">
+              <button id="logCopy">Copy</button>
+              <button id="logClear">Dismiss</button>
+            </span>
+          </div>
+          <div class="log-body" id="logBody"></div>
+        </div>
+
+        <div class="phead">
+          <div style="min-width:0">
+            <h1 id="title">My Drive</h1>
+            <div class="sub" id="sub">Everything you have uploaded</div>
+          </div>
+          <div class="right">
+            <div class="seg">
+              <button class="on" id="viewList" aria-label="List view">
+                <svg class="ic"><use href="#i-list"/></svg>
+              </button>
+              <button id="viewGrid" aria-label="Grid view">
+                <svg class="ic"><use href="#i-grid"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="recentsWrap" style="display:none">
+          <div class="sec-head" data-sec="recents" role="button" tabindex="0">
+            <svg class="ic"><use href="#i-chevron"/></svg>
+            <span class="t">Recent</span>
+          </div>
+          <div class="recents" id="recents"></div>
+        </div>
+
+        <div class="sec-head" id="filesHead" data-sec="files" role="button" tabindex="0">
+          <svg class="ic"><use href="#i-chevron"/></svg>
+          <span class="t" id="filesLabel">All files</span>
+        </div>
+
+        <div id="filesBody">
+          <div class="thead" id="thead">
+            <span></span>
+            <span class="c-name-h">Name</span>
+            <span class="c-type">Type</span>
+            <span class="c-when">Uploaded</span>
+            <span class="c-size">Size</span>
+            <span></span>
+          </div>
+
+          <div id="files"></div>
+
+          <div class="empty" id="empty">
+            <div class="ring"><svg class="ic"><use href="#i-cloud"/></svg></div>
+            <div class="t" id="emptyTitle">Nothing here yet</div>
+            <div class="s" id="emptySub">Drag a file anywhere on this page, or upload one to get a link you can share.</div>
+            <button class="btn" id="emptyBtn">
+              <svg class="ic ic-18"><use href="#i-upload"/></svg>
+              Upload a file
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  </main>
-</div>
-
-<!-- ================= drag overlay ================= -->
-<div class="drag-overlay" id="dragOverlay">
-  <div class="inner">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m7.5 8.5 4.5-4.5 4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
-    <div class="t">Drop to upload</div>
-    <div class="s">Files are stored privately in your guest drive</div>
+    </main>
   </div>
 </div>
 
-<!-- ================= row menu ================= -->
+<!-- upload tray -->
+<div class="tray" id="tray">
+  <div class="tray-row">
+    <svg class="ic"><use href="#i-cloud"/></svg>
+    <div class="tray-txt">
+      <div class="tray-nm" id="trayName">file</div>
+      <div class="tray-mt" id="trayMeta">Preparing…</div>
+    </div>
+  </div>
+  <div class="tray-bar"><i id="trayBar"></i></div>
+</div>
+
+<!-- row menu -->
 <div class="menu" id="menu">
-  <button data-act="open">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M18 13v6a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 19V8a1.5 1.5 0 0 1 1.5-1.5H11"/></svg>
-    Open
-  </button>
-  <button data-act="download">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M4 19h16"/></svg>
-    Download
-  </button>
-  <button data-act="copy">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
-    Copy link
-  </button>
-  <button data-act="delete" class="danger">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 4h4M9 7v12M15 7v12M6 7l1 14h10l1-14"/></svg>
-    Delete
-  </button>
+  <button data-act="open"><svg class="ic"><use href="#i-external"/></svg>Open</button>
+  <button data-act="download"><svg class="ic"><use href="#i-download"/></svg>Download</button>
+  <button data-act="copy"><svg class="ic"><use href="#i-copy"/></svg>Copy link</button>
+  <button data-act="delete" class="danger"><svg class="ic"><use href="#i-trash"/></svg>Delete</button>
+</div>
+
+<!-- drag overlay -->
+<div class="dragover" id="dragover">
+  <div class="box">
+    <svg class="ic"><use href="#i-upload"/></svg>
+    <div class="t">Drop to upload</div>
+    <div class="s">Files go to your guest drive</div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
+<input type="file" id="fileInput" multiple style="display:none" />
 
 <script>
-/* ===================================================================
-   Dtray — guest session + app
-   =================================================================== */
-const $ = (s) => document.querySelector(s);
-const $$ = (s) => Array.from(document.querySelectorAll(s));
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
 const el = {
-  sidebar:   $("#sidebar"),
-  menuBtn:   $("#menuBtn"),
-  newBtn:    $("#newBtn"),
-  browseBtn: $("#browseBtn"),
-  drop:      $("#drop"),
-  input:     $("#fileInput"),
-  files:     $("#files"),
-  fileHead:  $("#fileHead"),
-  empty:     $("#empty"),
-  emptyText: $("#emptyText"),
-  search:    $("#search"),
-  searchWrap:$("#searchWrap"),
-  searchClear:$("#searchClear"),
-  log:       $("#log"),
-  logBody:   $("#logBody"),
-  logCopy:   $("#logCopy"),
-  logClear:  $("#logClear"),
-  toast:     $("#toast"),
-  menu:      $("#menu"),
-  bar:       $("#bar"),
-  progressWrap: $("#progressWrap"),
-  progressLabel: $("#progressLabel"),
-  progressPct:   $("#progressPct"),
-  dragOverlay:   $("#dragOverlay"),
-  viewTitle: $("#viewTitle"),
-  viewSub:   $("#viewSub"),
-  listLabelText: $("#listLabelText"),
-  avatar:    $("#avatar"),
-  guestIdLabel: $("#guestIdLabel"),
-  storageUsed: $("#storageUsed"),
-  storageBar:  $("#storageBar"),
-  viewList:  $("#viewList"),
-  viewGrid:  $("#viewGrid"),
-  themeBtn:  $("#themeBtn"),
-  themeIcon: $("#themeIcon"),
-  helpBtn:   $("#helpBtn"),
+  side: $("#side"), menuBtn: $("#menuBtn"), newBtn: $("#newBtn"), input: $("#fileInput"),
+  files: $("#files"), thead: $("#thead"), empty: $("#empty"), emptyBtn: $("#emptyBtn"),
+  emptyTitle: $("#emptyTitle"), emptySub: $("#emptySub"),
+  recents: $("#recents"), recentsWrap: $("#recentsWrap"),
+  search: $("#search"), searchWrap: $("#searchWrap"), searchClear: $("#searchClear"),
+  log: $("#log"), logBody: $("#logBody"), logTitle: $("#logTitle"),
+  logCopy: $("#logCopy"), logClear: $("#logClear"),
+  toast: $("#toast"), menu: $("#menu"), scroll: $("#scroll"),
+  tray: $("#tray"), trayName: $("#trayName"), trayMeta: $("#trayMeta"), trayBar: $("#trayBar"),
+  dragover: $("#dragover"), title: $("#title"), sub: $("#sub"),
+  filesLabel: $("#filesLabel"), avatar: $("#avatar"), who: $("#who"), meter: $("#meter"),
+  viewList: $("#viewList"), viewGrid: $("#viewGrid"),
+  themeBtn: $("#themeBtn"), helpBtn: $("#helpBtn"),
 };
 
-/* ---------- state ---------- */
-const LS_KEY = "dtray.guest.v1";
+/* ===================================================================
+   State
+   =================================================================== */
+const LS_GUEST = "dtray.guest.v1";
+const LS_THEME = "dtray.theme";
+
 const state = {
-  guest: null,        // { guestId, token }
+  guest: null,
   files: [],
   view: "my",
   layout: "list",
   query: "",
-  trash: new Set(),   // soft-deleted keys for this session
-  currentFile: null,
+  trash: new Set(),
+  current: null,
 };
 
 /* ===================================================================
    Guest session
-   The account is created on first visit and stored in localStorage, so
-   returning to the tab restores the same drive.
    =================================================================== */
 function readGuest() {
   try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return null;
-    const g = JSON.parse(raw);
-    if (!g || !g.guestId || !g.token) return null;
-    return g;
+    const g = JSON.parse(localStorage.getItem(LS_GUEST) || "null");
+    return g && g.guestId && g.token ? g : null;
   } catch { return null; }
 }
-
-function writeGuest(g) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(g)); } catch {}
+function writeGuest(g) { try { localStorage.setItem(LS_GUEST, JSON.stringify(g)); } catch {} }
+function auth() {
+  return state.guest
+    ? { "x-guest-id": state.guest.guestId, "x-guest-token": state.guest.token }
+    : {};
 }
-
-function authHeaders() {
-  return state.guest ? {
-    "x-guest-id": state.guest.guestId,
-    "x-guest-token": state.guest.token,
-  } : {};
-}
-
 async function ensureGuest() {
-  // Try the saved session first — it may still be valid server-side.
   const saved = readGuest();
   if (saved) {
     state.guest = saved;
     try {
-      const r = await fetch("/api/guest/verify", { headers: authHeaders() });
+      const r = await fetch("/api/guest/verify", { headers: auth() });
       if (r.ok) return state.guest;
     } catch {}
   }
-  // Otherwise mint a fresh guest account.
   const r = await fetch("/api/guest", { method: "POST" });
   if (!r.ok) throw new Error("Could not create guest account");
   const g = await r.json();
@@ -1069,107 +1190,128 @@ async function ensureGuest() {
 }
 
 /* ===================================================================
-   Error log
+   Error banner
    =================================================================== */
 function logError(msg, detail) {
   const ts = new Date().toLocaleTimeString();
   const line = `[${ts}] ${msg}${detail ? "\n" + detail : ""}`;
-  el.logBody.textContent = el.logBody.textContent
-    ? el.logBody.textContent + "\n\n" + line
-    : line;
-  el.log.classList.add("show");
+  el.logBody.textContent = el.logBody.textContent ? el.logBody.textContent + "\n\n" + line : line;
+  el.log.classList.add("on");
+  el.logTitle.textContent = msg.length > 64 ? msg.slice(0, 64) + "…" : msg;
   el.logBody.scrollTop = el.logBody.scrollHeight;
 }
 el.logCopy.onclick = async () => {
-  try {
-    await navigator.clipboard.writeText(el.logBody.textContent);
-    showToast("Error log copied");
-  } catch { showToast("Copy failed — select manually"); }
+  try { await navigator.clipboard.writeText(el.logBody.textContent); toast("Copied"); }
+  catch { toast("Copy failed"); }
 };
-el.logClear.onclick = () => {
-  el.logBody.textContent = "";
-  el.log.classList.remove("show");
-};
+el.logClear.onclick = () => { el.logBody.textContent = ""; el.log.classList.remove("on"); };
 
 /* ===================================================================
    Toast
    =================================================================== */
-let toastTimer;
-function showToast(msg) {
+let toastT;
+function toast(msg) {
   el.toast.textContent = msg;
-  el.toast.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.toast.classList.remove("show"), 2600);
+  el.toast.classList.add("on");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.toast.classList.remove("on"), 2400);
 }
 
 /* ===================================================================
    Helpers
    =================================================================== */
-function fmtSize(bytes) {
-  if (!bytes) return "0 B";
-  if (bytes < 1024) return bytes + " B";
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-  if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + " MB";
-  return (bytes / 1024 / 1024 / 1024).toFixed(2) + " GB";
+function fmtSize(b) {
+  if (!b) return "0 B";
+  if (b < 1024) return b + " B";
+  if (b < 1048576) return (b / 1024).toFixed(0) + " KB";
+  if (b < 1073741824) return (b / 1048576).toFixed(1) + " MB";
+  return (b / 1073741824).toFixed(2) + " GB";
 }
-function fmtDate(d) {
-  const date = new Date(d);
-  const diff = (Date.now() - date.getTime()) / 1000;
-  if (diff < 60) return "just now";
-  if (diff < 3600) return Math.floor(diff / 60) + "m ago";
-  if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
-  if (diff < 86400 * 7) return Math.floor(diff / 86400) + "d ago";
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-function fmtFullDate(d) {
-  return new Date(d).toLocaleString(undefined, {
-    month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
-  });
+function fmtWhen(d) {
+  const t = new Date(d).getTime();
+  const s = (Date.now() - t) / 1000;
+  if (s < 60) return "Just now";
+  if (s < 3600) return Math.floor(s / 60) + " min ago";
+  if (s < 86400) return Math.floor(s / 3600) + " hr ago";
+  if (s < 604800) return Math.floor(s / 86400) + " d ago";
+  return new Date(t).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 function esc(s) {
-  return String(s).replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
-const isImage = (n) => /\.(jpg|jpeg|png|gif|webp|svg|avif|bmp)$/i.test(n);
-const isVideo = (n) => /\.(mp4|webm|mov|mkv|avi|m4v|flv)$/i.test(n);
-const isPdf   = (n) => /\.pdf$/i.test(n);
-const isZip   = (n) => /\.(zip|rar|7z|tar|gz|bz2)$/i.test(n);
-const isDoc   = (n) => /\.(doc|docx|xls|xlsx|ppt|pptx|csv|txt|md|rtf|odt)$/i.test(n);
+const isImage = n => /\.(jpg|jpeg|png|gif|webp|svg|avif|bmp|heic)$/i.test(n);
+const isVideo = n => /\.(mp4|webm|mov|mkv|avi|m4v|flv|wmv)$/i.test(n);
+const isAudio = n => /\.(mp3|wav|flac|aac|ogg|m4a|opus|wma)$/i.test(n);
+const isPdf   = n => /\.pdf$/i.test(n);
+const isZip   = n => /\.(zip|rar|7z|tar|gz|bz2|xz)$/i.test(n);
+const isDoc   = n => /\.(doc|docx|xls|xlsx|ppt|pptx|csv|txt|md|rtf|odt|json|xml|html|css|js|ts|py)$/i.test(n);
 
-function fileKind(name) {
-  if (isImage(name)) return "img";
-  if (isVideo(name)) return "vid";
-  if (isPdf(name))   return "pdf";
-  if (isZip(name))   return "zip";
-  if (isDoc(name))   return "doc";
+function kindOf(n) {
+  if (isImage(n)) return "image";
+  if (isVideo(n)) return "video";
+  if (isAudio(n)) return "audio";
+  if (isPdf(n)) return "pdf";
+  if (isZip(n)) return "zip";
+  if (isDoc(n)) return "doc";
   return "gen";
 }
-function extOf(name) {
-  const m = name.match(/\.([a-z0-9]+)$/i);
-  return m ? m[1].toUpperCase().slice(0, 4) : "FILE";
+function iconFor(n) {
+  if (isVideo(n)) return "i-video";
+  if (isAudio(n)) return "i-music";
+  if (isZip(n)) return "i-archive";
+  if (isImage(n)) return "i-image";
+  return "i-file";
 }
-function ownerLabel() {
-  return "You";
+function typeLabel(n) {
+  if (isVideo(n)) return "Video";
+  if (isImage(n)) return "Image";
+  if (isAudio(n)) return "Audio";
+  if (isPdf(n)) return "PDF";
+  if (isZip(n)) return "Archive";
+  if (isDoc(n)) return "Document";
+  return "File";
 }
-function ownerInitials() {
-  return "YOU";
+function fileIcon(f, cls = "fic") {
+  const k = kindOf(f.name);
+  if (k === "image") {
+    return `<div class="${cls} image"><img src="${esc(f.url)}" alt="" loading="lazy" /></div>`;
+  }
+  return `<div class="${cls} ${k}"><svg class="ic"><use href="#${iconFor(f.name)}"/></svg></div>`;
+}
+
+/* Swap a broken thumbnail for the type icon, after the node is in the DOM. */
+function attachThumbFallbacks(root) {
+  $$(".fic img, .prev img", root).forEach(img => {
+    img.addEventListener("error", () => {
+      const host = img.parentNode;
+      if (!host) return;
+      const isPrev = host.classList.contains("prev");
+      if (isPrev) {
+        host.innerHTML = '<div class="fic gen"><svg class="ic"><use href="#i-image"/></svg></div>';
+      } else {
+        host.classList.remove("image");
+        host.classList.add("gen");
+        host.innerHTML = '<svg class="ic"><use href="#i-image"/></svg>';
+      }
+    }, { once: true });
+  });
 }
 
 /* ===================================================================
-   Views + filtering
+   Views
    =================================================================== */
 const VIEWS = {
-  my:      { title: "My Drive",         label: "Your files",    sub: "Everything you have uploaded to your guest drive." },
-  recent:  { title: "Recent",           label: "Recently added", sub: "Files added to your drive most recently." },
-  images:  { title: "Images",           label: "Images",        sub: "Pictures and graphics in your drive." },
-  videos:  { title: "Videos",           label: "Videos",        sub: "Video files stored in your drive." },
-  docs:    { title: "Documents",        label: "Documents",     sub: "Documents, sheets and plain text files." },
-  shared:  { title: "Shared links",     label: "Shared links",  sub: "Every link you have shared from Dtray." },
-  trash:   { title: "Trash",            label: "Trash",         sub: "Files you deleted in this session." },
+  my:     { title: "My Drive",      label: "All files",  sub: "Everything you have uploaded" },
+  recent: { title: "Recent",        label: "Recent",     sub: "Newest uploads first" },
+  images: { title: "Images",        label: "Images",     sub: "Pictures and graphics" },
+  videos: { title: "Videos",        label: "Videos",     sub: "Video files" },
+  docs:   { title: "Documents",     label: "Documents",  sub: "Documents and text files" },
+  shared: { title: "Shared links",  label: "Links",      sub: "Every link in your drive" },
+  trash:  { title: "Trash",         label: "Trash",      sub: "Deleted in this session" },
 };
 
-function matchesView(f, view) {
-  switch (view) {
+function inView(f, v) {
+  switch (v) {
     case "images": return isImage(f.name);
     case "videos": return isVideo(f.name);
     case "docs":   return isDoc(f.name) || isPdf(f.name);
@@ -1177,9 +1319,8 @@ function matchesView(f, view) {
     default:       return true;
   }
 }
-
-function visibleFiles() {
-  let list = state.files.filter(f => matchesView(f, state.view));
+function visible() {
+  let list = state.files.filter(f => inView(f, state.view));
   if (state.view !== "trash") list = list.filter(f => !state.trash.has(f.key));
   if (state.query) {
     const q = state.query.toLowerCase();
@@ -1193,462 +1334,438 @@ function visibleFiles() {
    =================================================================== */
 function render() {
   const v = VIEWS[state.view];
-  el.viewTitle.textContent = state.query ? `Search results for “${state.query}”` : v.title;
-  el.viewSub.textContent = state.query
-    ? `${visibleFiles().length} match${visibleFiles().length === 1 ? "" : "es"} in your drive.`
+  const list = visible();
+
+  el.title.textContent = state.query ? `Search results` : v.title;
+  el.sub.textContent = state.query
+    ? `${list.length} result${list.length === 1 ? "" : "s"} for “${state.query}”`
     : v.sub;
-  el.listLabelText.textContent = state.query ? "Results" : v.label;
+  el.filesLabel.textContent = state.query ? "Results" : v.label;
 
-  const list = visibleFiles();
+  const live = state.files.filter(f => !state.trash.has(f.key));
+  $("#n-my").textContent = live.length;
+  $("#n-recent").textContent = live.length;
+  $("#n-images").textContent = live.filter(f => isImage(f.name)).length;
+  $("#n-videos").textContent = live.filter(f => isVideo(f.name)).length;
+  $("#n-docs").textContent = live.filter(f => isDoc(f.name) || isPdf(f.name)).length;
+  $("#n-shared").textContent = live.length;
 
-  // counts
-  const active = state.files.filter(f => !state.trash.has(f.key));
-  $("#cntMy").textContent = active.length;
-  $("#cntRecent").textContent = active.length;
-  $("#cntImages").textContent = active.filter(f => isImage(f.name)).length;
-  $("#cntVideos").textContent = active.filter(f => isVideo(f.name)).length;
-  $("#cntDocs").textContent = active.filter(f => isDoc(f.name) || isPdf(f.name)).length;
-  $("#cntShared").textContent = active.length;
+  const used = live.reduce((s, f) => s + (f.size || 0), 0);
+  const CAP = 5 * 1073741824;
+  el.meter.style.width = Math.min(100, (used / CAP) * 100).toFixed(1) + "%";
+  el.who.textContent = `${fmtSize(used)} of 5 GB used`;
 
-  // storage
-  const used = active.reduce((s, f) => s + (f.size || 0), 0);
-  el.storageUsed.textContent = fmtSize(used);
-  el.storageBar.style.width = Math.min(100, (used / (1024 * 1024 * 1024)) * 100).toFixed(1) + "%";
+  // recents strip — only in My Drive / Recent, and only when not searching
+  const showRecents = !state.query && (state.view === "my" || state.view === "recent") && live.length > 0;
+  el.recentsWrap.style.display = showRecents ? "" : "none";
+  if (showRecents) {
+    el.recents.innerHTML = live.slice(0, 4).map(f => `
+      <div class="rcard" data-open="${esc(f.key)}" title="${esc(f.name)}">
+        ${fileIcon(f)}
+        <div class="txt">
+          <div class="nm">${esc(f.name)}</div>
+          <div class="mt">${fmtSize(f.size)} · ${fmtWhen(f.uploaded)}</div>
+        </div>
+      </div>`).join("");
+  }
 
-  // list vs grid
+  // layout
   const isGrid = state.layout === "grid";
   el.viewList.classList.toggle("on", !isGrid);
   el.viewGrid.classList.toggle("on", isGrid);
-  el.fileHead.style.display = isGrid ? "none" : "grid";
+  el.thead.style.display = isGrid ? "none" : "grid";
 
   el.files.innerHTML = "";
+  el.empty.classList.toggle("on", list.length === 0);
+
   if (list.length === 0) {
-    el.empty.style.display = "block";
-    el.emptyText.textContent = state.query
-      ? `Nothing matches “${state.query}”.`
-      : state.view === "trash"
-        ? "Trash is empty."
-        : "No files yet. Drop something above to get started.";
+    el.thead.style.display = "none";
+    if (state.query) {
+      el.emptyTitle.textContent = "No matches";
+      el.emptySub.textContent = `Nothing in your drive matches “${state.query}”.`;
+    } else if (state.view === "trash") {
+      el.emptyTitle.textContent = "Trash is empty";
+      el.emptySub.textContent = "Files you delete show up here.";
+    } else if (state.view !== "my" && state.view !== "recent" && state.view !== "shared") {
+      el.emptyTitle.textContent = "Nothing here yet";
+      el.emptySub.textContent = `No ${v.label.toLowerCase()} in your drive.`;
+    } else {
+      el.emptyTitle.textContent = "Nothing here yet";
+      el.emptySub.textContent = "Drag a file anywhere on this page, or upload one to get a link you can share.";
+    }
+    el.emptyBtn.style.display = state.query || state.view === "trash" ? "none" : "";
     return;
   }
-  el.empty.style.display = "none";
 
-  if (isGrid) renderGrid(list);
-  else renderRows(list);
+  if (isGrid) renderGrid(list); else renderRows(list);
+  attachThumbFallbacks(el.files);
+  if (showRecents) attachThumbFallbacks(el.recents);
 }
 
 function renderRows(list) {
   const frag = document.createDocumentFragment();
-  list.forEach(f => {
+  for (const f of list) {
     const row = document.createElement("div");
-    row.className = "file-row";
+    row.className = "frow";
     row.dataset.key = f.key;
-
-    const kind = fileKind(f.name);
-    const thumb = kind === "img"
-      ? `<div class="file-ic img"><img src="${esc(f.url)}" alt="" loading="lazy" /></div>`
-      : `<div class="file-ic ${kind}">${esc(extOf(f.name))}</div>`;
-
     row.innerHTML = `
-      ${thumb}
-      <div style="min-width:0">
-        <a class="file-name" href="${esc(f.url)}" target="_blank" rel="noopener" title="${esc(f.name)}">${esc(f.name)}</a>
-        <div class="file-sub">${fmtFullDate(f.uploaded)}</div>
-      </div>
-      <div class="file-owner">
-        <span class="av">${ownerInitials()}</span>
-        <span class="nm">${ownerLabel()}</span>
-      </div>
-      <div class="file-size">${fmtSize(f.size)}</div>
-      <button class="file-more" data-more="${esc(f.key)}" aria-label="More actions">
-        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
-      </button>
-    `;
+      ${fileIcon(f)}
+      <div class="c-name"><a href="${esc(f.url)}" target="_blank" rel="noopener" title="${esc(f.name)}">${esc(f.name)}</a></div>
+      <div class="c-type">${typeLabel(f.name)}</div>
+      <div class="c-when">${fmtWhen(f.uploaded)}</div>
+      <div class="c-size">${fmtSize(f.size)}</div>
+      <button class="fmore" data-more="${esc(f.key)}" aria-label="More">
+        <svg class="ic ic-18"><use href="#i-more"/></svg>
+      </button>`;
     frag.appendChild(row);
-  });
+  }
   el.files.appendChild(frag);
 }
 
 function renderGrid(list) {
   const wrap = document.createElement("div");
-  wrap.className = "file-grid";
-  list.forEach(f => {
-    const kind = fileKind(f.name);
-    const thumb = kind === "img"
-      ? `<div class="file-ic img"><img src="${esc(f.url)}" alt="" loading="lazy" /></div>`
-      : `<div class="file-ic ${kind}">${esc(extOf(f.name))}</div>`;
+  wrap.className = "grid";
+  for (const f of list) {
     const card = document.createElement("div");
-    card.className = "grid-card";
+    card.className = "gcard";
+    const preview = kindOf(f.name) === "image"
+      ? `<img src="${esc(f.url)}" alt="" loading="lazy" />`
+      : fileIcon(f);
     card.innerHTML = `
-      ${thumb}
-      <a class="file-name" href="${esc(f.url)}" target="_blank" rel="noopener" title="${esc(f.name)}">${esc(f.name)}</a>
-      <div class="file-sub">${fmtSize(f.size)} · ${fmtDate(f.uploaded)}</div>
-    `;
+      <div class="prev">${preview}</div>
+      <div class="txt">
+        <div class="nm" title="${esc(f.name)}">${esc(f.name)}</div>
+        <div class="mt">${fmtSize(f.size)} · ${fmtWhen(f.uploaded)}</div>
+      </div>`;
+    card.onclick = () => window.open(f.url, "_blank", "noopener");
     wrap.appendChild(card);
-  });
+  }
   el.files.appendChild(wrap);
 }
 
 /* ===================================================================
-   File list loading
+   Data
    =================================================================== */
 async function loadFiles() {
   try {
-    const r = await fetch("/api/files", { headers: authHeaders() });
+    const r = await fetch("/api/files", { headers: auth() });
     if (!r.ok) {
-      const data = await r.json().catch(() => ({}));
-      throw new Error(data.error || `HTTP ${r.status}`);
+      const d = await r.json().catch(() => ({}));
+      throw new Error(d.error || `HTTP ${r.status}`);
     }
-    const data = await r.json();
-    state.files = data.files || [];
+    const d = await r.json();
+    state.files = d.files || [];
     render();
   } catch (e) {
-    logError("Could not load files: " + e.message);
+    logError("Couldn't load your files", e.message);
   }
 }
 
 /* ===================================================================
-   Upload — chunked for large files, single-shot for small
+   Upload
    =================================================================== */
-const CHUNK_SIZE = 20 * 1024 * 1024; // under Cloudflare's 100s edge timeout
-const MAX_RETRIES = 3;
+const CHUNK = 20 * 1024 * 1024;
+const RETRIES = 3;
 
-function setProgress(pct, label) {
-  el.bar.style.width = Math.max(0, Math.min(100, pct)) + "%";
-  el.progressPct.textContent = Math.round(pct) + "%";
-  if (label) el.progressLabel.textContent = label;
+function tray(pct, name, meta, cls = "") {
+  el.tray.classList.add("on");
+  el.tray.className = "tray on " + cls;
+  if (name) el.trayName.textContent = name;
+  if (meta) el.trayMeta.textContent = meta;
+  el.trayBar.style.width = Math.max(0, Math.min(100, pct)) + "%";
+}
+function trayHide(after = 0) {
+  setTimeout(() => el.tray.classList.remove("on"), after);
 }
 
-function uploadChunkWithRetry(uploadId, partNumber, chunk, totalChunks, file, uploadedBytes) {
+function putChunk(uploadId, part, blob, total, file, doneBytes) {
   return (async () => {
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    for (let attempt = 1; attempt <= RETRIES; attempt++) {
       try {
         return await new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
-          xhr.open("POST", `/api/upload/chunk?uploadId=${encodeURIComponent(uploadId)}&part=${partNumber}`);
+          xhr.open("POST", `/api/upload/chunk?uploadId=${encodeURIComponent(uploadId)}&part=${part}`);
           xhr.setRequestHeader("Content-Type", "application/octet-stream");
-          Object.entries(authHeaders()).forEach(([k, v]) => xhr.setRequestHeader(k, v));
-
-          xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable) {
-              const overallPct = ((uploadedBytes + e.loaded) / file.size) * 100;
-              setProgress(overallPct,
-                `Uploading ${file.name} — chunk ${partNumber}/${totalChunks}${attempt > 1 ? `, retry ${attempt}` : ""}`);
-            }
+          for (const [k, val] of Object.entries(auth())) xhr.setRequestHeader(k, val);
+          xhr.upload.onprogress = e => {
+            if (!e.lengthComputable) return;
+            const pct = ((doneBytes + e.loaded) / file.size) * 100;
+            tray(pct, file.name,
+              `${Math.round(pct)}% · part ${part} of ${total}${attempt > 1 ? ` · retry ${attempt}` : ""}`);
           };
-
           xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
               try { resolve(JSON.parse(xhr.responseText)); } catch { resolve({}); }
             } else {
-              let detail = xhr.responseText ? xhr.responseText.slice(0, 400) : "(empty)";
-              try {
-                const j = JSON.parse(xhr.responseText);
-                detail = j.error + (j.detail ? "\n" + j.detail : "");
-              } catch {}
-              reject(new Error(`Chunk ${partNumber}/${totalChunks} rejected (HTTP ${xhr.status})\n${detail}`));
+              let d = (xhr.responseText || "").slice(0, 300);
+              try { const j = JSON.parse(xhr.responseText); d = j.error + (j.detail ? " — " + j.detail : ""); } catch {}
+              reject(new Error(`Part ${part}/${total} failed (HTTP ${xhr.status})\n${d}`));
             }
           };
-          xhr.onerror = () => reject(new Error(`Network error on chunk ${partNumber}/${totalChunks}`));
-          xhr.ontimeout = () => reject(new Error(`Timeout on chunk ${partNumber}/${totalChunks}`));
+          xhr.onerror = () => reject(new Error(`Network error on part ${part}/${total}`));
+          xhr.ontimeout = () => reject(new Error(`Timeout on part ${part}/${total}`));
           xhr.timeout = 120000;
-          xhr.send(chunk);
+          xhr.send(blob);
         });
       } catch (err) {
-        if (attempt === MAX_RETRIES) throw err;
-        await new Promise(r => setTimeout(r, 2000 * attempt));
+        if (attempt === RETRIES) throw err;
+        await new Promise(r => setTimeout(r, 1800 * attempt));
       }
     }
   })();
 }
 
-async function uploadSingle(file) {
+function putSmall(file) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `/api/upload?name=${encodeURIComponent(file.name)}&type=${encodeURIComponent(file.type || "application/octet-stream")}`);
     xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
-    Object.entries(authHeaders()).forEach(([k, v]) => xhr.setRequestHeader(k, v));
-
-    xhr.upload.onprogress = (e) => {
+    for (const [k, val] of Object.entries(auth())) xhr.setRequestHeader(k, val);
+    xhr.upload.onprogress = e => {
       if (e.lengthComputable) {
-        setProgress((e.loaded / e.total) * 100, `Uploading ${file.name}`);
+        const pct = (e.loaded / e.total) * 100;
+        tray(pct, file.name, `${Math.round(pct)}% · ${fmtSize(e.total)}`);
       }
     };
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         try { resolve(JSON.parse(xhr.responseText)); } catch { resolve({}); }
       } else {
-        let detail = xhr.responseText ? xhr.responseText.slice(0, 600) : "(empty response)";
-        try {
-          const j = JSON.parse(xhr.responseText);
-          detail = j.error + (j.detail ? "\n" + j.detail : "") + (j.stack ? "\n\n" + j.stack : "");
-        } catch {}
-        reject(new Error(`Upload rejected by server (HTTP ${xhr.status})\n${detail}`));
+        let d = (xhr.responseText || "").slice(0, 400);
+        try { const j = JSON.parse(xhr.responseText); d = j.error + (j.detail ? " — " + j.detail : ""); } catch {}
+        reject(new Error(`Upload failed (HTTP ${xhr.status})\n${d}`));
       }
     };
-    xhr.onerror = () => reject(new Error("Network error during upload."));
+    xhr.onerror = () => reject(new Error("Network error during upload"));
     xhr.send(file);
   });
 }
 
-async function uploadFile(file) {
-  el.progressWrap.classList.add("show");
-  setProgress(0, `Uploading ${file.name}`);
-
+async function upload(file) {
+  tray(0, file.name, "Preparing…");
   try {
-    if (file.size < CHUNK_SIZE) {
-      await uploadSingle(file);
+    if (file.size < CHUNK) {
+      await putSmall(file);
     } else {
-      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-      let uploadedBytes = 0;
-
-      el.progressLabel.textContent = `Uploading ${file.name} — preparing…`;
-      const initRes = await fetch(
+      const total = Math.ceil(file.size / CHUNK);
+      const init = await fetch(
         `/api/upload/init?name=${encodeURIComponent(file.name)}&type=${encodeURIComponent(file.type || "application/octet-stream")}`,
-        { method: "POST", headers: authHeaders() }
+        { method: "POST", headers: auth() }
       );
-      if (!initRes.ok) {
-        const err = await initRes.json().catch(() => ({}));
-        throw new Error(`Init failed (HTTP ${initRes.status}): ${err.error || "unknown"}\n${err.detail || ""}`);
+      if (!init.ok) {
+        const d = await init.json().catch(() => ({}));
+        throw new Error(`Couldn't start upload (HTTP ${init.status})\n${d.error || ""} ${d.detail || ""}`);
       }
-      const { uploadId } = await initRes.json();
+      const { uploadId } = await init.json();
 
-      for (let i = 0; i < totalChunks; i++) {
-        const start = i * CHUNK_SIZE;
-        const end = Math.min(start + CHUNK_SIZE, file.size);
-        await uploadChunkWithRetry(uploadId, i + 1, file.slice(start, end), totalChunks, file, uploadedBytes);
-        uploadedBytes += (end - start);
+      let sent = 0;
+      for (let i = 0; i < total; i++) {
+        const start = i * CHUNK;
+        const end = Math.min(start + CHUNK, file.size);
+        await putChunk(uploadId, i + 1, file.slice(start, end), total, file, sent);
+        sent += end - start;
       }
 
-      el.progressLabel.textContent = `Uploading ${file.name} — finalizing…`;
-      const completeRes = await fetch(`/api/upload/complete?uploadId=${encodeURIComponent(uploadId)}`, {
-        method: "POST", headers: authHeaders(),
+      tray(100, file.name, "Finishing…");
+      const done = await fetch(`/api/upload/complete?uploadId=${encodeURIComponent(uploadId)}`, {
+        method: "POST", headers: auth(),
       });
-      if (!completeRes.ok) {
-        const err = await completeRes.json().catch(() => ({}));
-        throw new Error(`Complete failed (HTTP ${completeRes.status}): ${err.error || "unknown"}\n${err.detail || ""}`);
+      if (!done.ok) {
+        const d = await done.json().catch(() => ({}));
+        throw new Error(`Couldn't finish upload (HTTP ${done.status})\n${d.error || ""} ${d.detail || ""}`);
       }
     }
 
-    setProgress(100, `Uploaded ${file.name}`);
-    await new Promise(r => setTimeout(r, 350));
-    showToast("Uploaded — link ready");
+    tray(100, file.name, "Uploaded", "done");
+    toast("Uploaded — link ready");
     await loadFiles();
+    trayHide(1400);
   } catch (e) {
-    logError(`Upload failed for "${file.name}" (${fmtSize(file.size)})`, e.message);
-    showToast("Upload failed — see error log");
-  } finally {
-    el.progressWrap.classList.remove("show");
-    setProgress(0, "");
-    el.bar.style.width = "0%";
-    el.progressPct.textContent = "0%";
+    tray(100, file.name, "Failed", "err");
+    logError(`Upload failed — ${file.name}`, e.message);
+    toast("Upload failed");
+    trayHide(4000);
   }
 }
 
 /* ===================================================================
-   Row action menu
+   Row menu
    =================================================================== */
-function closeMenu() { el.menu.classList.remove("show"); }
+function closeMenu() { el.menu.classList.remove("on"); }
 
 function openMenu(btn, file) {
-  state.currentFile = file;
+  state.current = file;
+  el.menu.classList.add("on");
   const r = btn.getBoundingClientRect();
-  el.menu.classList.add("show");
-  const mw = el.menu.offsetWidth;
-  const mh = el.menu.offsetHeight;
-  let left = r.right - mw;
-  let top = r.bottom + 6;
+  const mw = el.menu.offsetWidth, mh = el.menu.offsetHeight;
+  let left = r.right - mw, top = r.bottom + 6;
   if (left < 8) left = 8;
-  if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 6);
+  if (top + mh > innerHeight - 8) top = Math.max(8, r.top - mh - 6);
   el.menu.style.left = left + "px";
   el.menu.style.top = top + "px";
 }
 
-el.menu.addEventListener("click", async (e) => {
-  const btn = e.target.closest("button[data-act]");
-  if (!btn) return;
-  const act = btn.dataset.act;
-  const f = state.currentFile;
+el.menu.addEventListener("click", async e => {
+  const b = e.target.closest("button[data-act]");
+  if (!b) return;
+  const act = b.dataset.act, f = state.current;
   closeMenu();
   if (!f) return;
 
-  if (act === "open") {
-    window.open(f.url, "_blank", "noopener");
-  } else if (act === "download") {
+  if (act === "open") window.open(f.url, "_blank", "noopener");
+  else if (act === "download") {
     const a = document.createElement("a");
-    a.href = f.url;
-    a.download = f.name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    a.href = f.url; a.download = f.name;
+    document.body.appendChild(a); a.click(); a.remove();
   } else if (act === "copy") {
-    try {
-      await navigator.clipboard.writeText(f.url);
-      showToast("Link copied");
-    } catch { showToast("Could not copy link"); }
+    try { await navigator.clipboard.writeText(f.url); toast("Link copied"); }
+    catch { toast("Couldn't copy"); }
   } else if (act === "delete") {
-    if (state.view === "trash") {
-      state.trash.delete(f.key);
-      render();
-      showToast("Removed from trash");
-      return;
-    }
-    if (!confirm(`Delete "${f.name}"?`)) return;
+    if (state.view === "trash") { state.trash.delete(f.key); render(); toast("Restored"); return; }
     try {
-      const res = await fetch(`/api/files/${encodeURIComponent(f.key)}`, {
-        method: "DELETE", headers: authHeaders(),
-      });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.error || `HTTP ${res.status}`);
-      }
+      const r = await fetch(`/api/files/${encodeURIComponent(f.key)}`, { method: "DELETE", headers: auth() });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || `HTTP ${r.status}`); }
       state.trash.add(f.key);
       render();
-      showToast("Moved to trash");
-    } catch (e) {
-      logError("Delete failed: " + e.message);
-    }
+      toast("Moved to trash");
+    } catch (e) { logError("Couldn't delete that file", e.message); }
   }
 });
 
-document.addEventListener("click", (e) => {
+document.addEventListener("click", e => {
   if (!e.target.closest("#menu") && !e.target.closest("[data-more]")) closeMenu();
 });
 window.addEventListener("resize", closeMenu);
-window.addEventListener("scroll", closeMenu, true);
+el.scroll.addEventListener("scroll", closeMenu, { passive: true });
 
 /* ===================================================================
    Interactions
    =================================================================== */
-el.files.addEventListener("click", (e) => {
+el.files.addEventListener("click", e => {
   const more = e.target.closest("[data-more]");
   if (!more) return;
-  const key = more.dataset.more;
-  const file = state.files.find(f => f.key === key);
-  if (file) openMenu(more, file);
+  const f = state.files.find(x => x.key === more.dataset.more);
+  if (f) openMenu(more, f);
 });
 
-el.newBtn.onclick = () => { el.input.click(); };
-el.browseBtn.onclick = (e) => { e.stopPropagation(); el.input.click(); };
-el.drop.onclick = (e) => { if (e.target !== el.browseBtn) el.input.click(); };
+el.recents.addEventListener("click", e => {
+  const card = e.target.closest("[data-open]");
+  if (!card) return;
+  const f = state.files.find(x => x.key === card.dataset.open);
+  if (f) window.open(f.url, "_blank", "noopener");
+});
 
+const pick = () => el.input.click();
+el.newBtn.onclick = pick;
+el.emptyBtn.onclick = pick;
 el.input.addEventListener("change", () => {
-  const files = Array.from(el.input.files || []);
+  const fs = Array.from(el.input.files || []);
   el.input.value = "";
-  files.forEach((f, i) => setTimeout(() => uploadFile(f), i * 150));
+  fs.forEach((f, i) => setTimeout(() => upload(f), i * 140));
 });
 
-/* drag & drop — full-window overlay */
-let dragDepth = 0;
-window.addEventListener("dragenter", (e) => {
+let depth = 0;
+window.addEventListener("dragenter", e => { e.preventDefault(); depth++; el.dragover.classList.add("on"); });
+window.addEventListener("dragover", e => e.preventDefault());
+window.addEventListener("dragleave", e => {
   e.preventDefault();
-  dragDepth++;
-  el.dragOverlay.classList.add("show");
+  depth = Math.max(0, depth - 1);
+  if (!depth) el.dragover.classList.remove("on");
 });
-window.addEventListener("dragover", (e) => { e.preventDefault(); });
-window.addEventListener("dragleave", (e) => {
+window.addEventListener("drop", e => {
   e.preventDefault();
-  dragDepth = Math.max(0, dragDepth - 1);
-  if (dragDepth === 0) el.dragOverlay.classList.remove("show");
+  depth = 0;
+  el.dragover.classList.remove("on");
+  Array.from(e.dataTransfer?.files || []).forEach((f, i) => setTimeout(() => upload(f), i * 140));
 });
-window.addEventListener("drop", (e) => {
-  e.preventDefault();
-  dragDepth = 0;
-  el.dragOverlay.classList.remove("show");
-  const files = Array.from(e.dataTransfer?.files || []);
-  files.forEach((f, i) => setTimeout(() => uploadFile(f), i * 150));
-});
-
-/* paste upload */
-window.addEventListener("paste", (e) => {
+window.addEventListener("paste", e => {
   const items = e.clipboardData?.items;
   if (!items) return;
-  for (const item of items) {
-    if (item.kind === "file") {
-      const f = item.getAsFile();
-      if (f) { uploadFile(f); break; }
-    }
+  for (const it of items) {
+    if (it.kind === "file") { const f = it.getAsFile(); if (f) upload(f); break; }
   }
 });
 
-/* search */
-el.search.addEventListener("input", (e) => {
+el.search.addEventListener("input", e => {
   state.query = e.target.value.trim();
-  el.searchWrap.classList.toggle("has-value", !!state.query);
+  el.searchWrap.classList.toggle("filled", !!state.query);
   render();
 });
 el.searchClear.onclick = () => {
   el.search.value = "";
   state.query = "";
-  el.searchWrap.classList.remove("has-value");
+  el.searchWrap.classList.remove("filled");
   render();
   el.search.focus();
 };
 
-/* nav */
 $$(".nav-item").forEach(item => {
   item.onclick = () => {
-    $$(".nav-item").forEach(i => i.classList.remove("active"));
-    item.classList.add("active");
+    $$(".nav-item").forEach(i => i.classList.remove("on"));
+    item.classList.add("on");
     state.view = item.dataset.view;
     state.query = "";
     el.search.value = "";
-    el.searchWrap.classList.remove("has-value");
+    el.searchWrap.classList.remove("filled");
+    el.scroll.scrollTop = 0;
     render();
-    if (window.innerWidth <= 860) el.sidebar.classList.remove("open");
+    if (innerWidth <= 900) el.side.classList.remove("open");
   };
 });
 
-/* layout toggle */
 el.viewList.onclick = () => { state.layout = "list"; render(); };
 el.viewGrid.onclick = () => { state.layout = "grid"; render(); };
+el.menuBtn.onclick = () => el.side.classList.toggle("open");
 
-/* mobile sidebar */
-el.menuBtn.onclick = () => el.sidebar.classList.toggle("open");
+/* collapsible sections */
+$$(".sec-head[data-sec]").forEach(head => {
+  const body = head.dataset.sec === "recents" ? el.recents : $("#filesBody");
+  const toggle = () => {
+    const closed = head.classList.toggle("closed");
+    if (body) body.style.display = closed ? "none" : "";
+  };
+  head.onclick = toggle;
+  head.onkeydown = e => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+  };
+});
 
-/* theme toggle — overrides the system preference for this session */
-const THEME_KEY = "dtray.theme";
+/* theme */
 function applyTheme(mode) {
   const root = document.documentElement;
   const dark = mode === "dark" || (mode !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
-  root.style.colorScheme = dark ? "dark" : "light";
-  // override the media query with an explicit class
   root.classList.toggle("force-dark", dark);
   root.classList.toggle("force-light", !dark);
-  el.themeIcon.innerHTML = dark
-    ? `<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>`
-    : `<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/>`;
+  $("#themeIcon").setAttribute("href", dark ? "#i-moon" : "#i-sun");
 }
-try {
-  const savedTheme = localStorage.getItem(THEME_KEY);
-  if (savedTheme) applyTheme(savedTheme);
-  else applyTheme(null);
-} catch { applyTheme(null); }
+let savedTheme = null;
+try { savedTheme = localStorage.getItem(LS_THEME); } catch {}
+applyTheme(savedTheme);
 el.themeBtn.onclick = () => {
-  const current = document.documentElement.classList.contains("force-dark") ? "dark" : "light";
-  const next = current === "dark" ? "light" : "dark";
+  const isDark = document.documentElement.classList.contains("force-dark");
+  const next = isDark ? "light" : "dark";
   applyTheme(next);
-  try { localStorage.setItem(THEME_KEY, next); } catch {}
+  try { localStorage.setItem(LS_THEME, next); } catch {}
 };
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  let t = null; try { t = localStorage.getItem(LS_THEME); } catch {}
+  if (!t) applyTheme(null);
+});
 
-/* shortcuts */
-el.helpBtn.onclick = () => {
-  showToast("Tip: paste a file anywhere, or drag it onto the page");
-};
+el.helpBtn.onclick = () => toast("Tip: paste a file anywhere, or drag one onto the page");
 
 /* ===================================================================
    Boot
    =================================================================== */
-(async function init() {
+(async () => {
   try {
     await ensureGuest();
     el.avatar.textContent = "G";
     el.avatar.title = "Guest " + state.guest.guestId.slice(0, 10);
-    el.guestIdLabel.textContent = "Guest " + state.guest.guestId.slice(0, 10);
     await loadFiles();
     setInterval(loadFiles, 15000);
   } catch (e) {
-    logError("Could not start Dtray: " + e.message);
+    logError("Couldn't start Dtray", e.message);
   }
 })();
 </script>
