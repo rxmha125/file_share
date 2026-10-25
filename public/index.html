@@ -374,7 +374,48 @@ async function loadFiles() {
 }
 
 /* ---------- upload — chunked for large files, single-shot for small ---------- */
-const CHUNK_SIZE = 80 * 1024 * 1024; // 80MB per chunk (under Cloudflare's 100MB limit)
+const CHUNK_SIZE = 20 * 1024 * 1024; // 20MB per chunk — small enough to finish under Cloudflare's 100s timeout
+const MAX_RETRIES = 3;
+
+async function uploadChunkWithRetry(uploadId, partNumber, chunk, totalChunks, file, uploadedBytes) {
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `/api/upload/chunk?uploadId=${encodeURIComponent(uploadId)}&part=${partNumber}`);
+        xhr.setRequestHeader("Content-Type", "application/octet-stream");
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const overallPct = ((uploadedBytes + e.loaded) / file.size) * 100;
+            bar.style.width = overallPct + "%";
+            progressLabel.textContent = `Uploading ${file.name} — ${overallPct.toFixed(0)}% of ${fmtSize(file.size)} (chunk ${partNumber}/${totalChunks}${attempt > 1 ? ", retry " + attempt : ""})`;
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try { resolve(JSON.parse(xhr.responseText)); }
+            catch { resolve({}); }
+          } else {
+            let detail = xhr.responseText ? xhr.responseText.slice(0, 400) : "(empty)";
+            try { const j = JSON.parse(xhr.responseText); detail = j.error + (j.detail ? "\n" + j.detail : ""); } catch {}
+            reject(new Error(`Chunk ${partNumber}/${totalChunks} rejected (HTTP ${xhr.status})\n${detail}`));
+          }
+        };
+        xhr.onerror = () => reject(new Error(`Network error on chunk ${partNumber}/${totalChunks}`));
+        xhr.ontimeout = () => reject(new Error(`Timeout on chunk ${partNumber}/${totalChunks}`));
+        xhr.timeout = 120000; // 2 min per chunk
+        xhr.send(chunk);
+      });
+      return result;
+    } catch (err) {
+      if (attempt === MAX_RETRIES) throw err;
+      // Wait a bit before retrying
+      await new Promise(r => setTimeout(r, 2000 * attempt));
+    }
+  }
+}
 
 async function uploadFile(file) {
   progress.style.display = "block";
@@ -382,7 +423,7 @@ async function uploadFile(file) {
   bar.style.width = "0%";
   progressLabel.textContent = `Uploading ${file.name} — 0% of ${fmtSize(file.size)}`;
 
-  // Small files (under 80MB) — single-shot upload, no chunking overhead
+  // Small files (under 20MB) — single-shot upload, no chunking overhead
   if (file.size < CHUNK_SIZE) {
     try {
       const result = await new Promise((resolve, reject) => {
@@ -429,7 +470,7 @@ async function uploadFile(file) {
     return;
   }
 
-  // Large files (80MB+) — chunked multipart upload
+  // Large files (20MB+) — chunked multipart upload with retry
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
   let uploadedBytes = 0;
 
@@ -443,40 +484,14 @@ async function uploadFile(file) {
     }
     const { uploadId } = await initRes.json();
 
-    // 2. Upload each chunk
+    // 2. Upload each chunk with retry
     for (let i = 0; i < totalChunks; i++) {
       const start = i * CHUNK_SIZE;
       const end = Math.min(start + CHUNK_SIZE, file.size);
       const chunk = file.slice(start, end);
       const partNumber = i + 1;
 
-      const chunkRes = await new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", `/api/upload/chunk?uploadId=${encodeURIComponent(uploadId)}&part=${partNumber}`);
-        xhr.setRequestHeader("Content-Type", "application/octet-stream");
-
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) {
-            const overallPct = ((uploadedBytes + e.loaded) / file.size) * 100;
-            bar.style.width = overallPct + "%";
-            progressLabel.textContent = `Uploading ${file.name} — ${overallPct.toFixed(0)}% of ${fmtSize(file.size)} (chunk ${i + 1}/${totalChunks})`;
-          }
-        };
-
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try { resolve(JSON.parse(xhr.responseText)); }
-            catch { resolve({}); }
-          } else {
-            let detail = xhr.responseText ? xhr.responseText.slice(0, 400) : "(empty)";
-            try { const j = JSON.parse(xhr.responseText); detail = j.error + (j.detail ? "\n" + j.detail : ""); } catch {}
-            reject(new Error(`Chunk ${partNumber}/${totalChunks} rejected (HTTP ${xhr.status})\n${detail}`));
-          }
-        };
-        xhr.onerror = () => reject(new Error(`Network error on chunk ${partNumber}/${totalChunks}`));
-        xhr.send(chunk);
-      });
-
+      await uploadChunkWithRetry(uploadId, partNumber, chunk, totalChunks, file, uploadedBytes);
       uploadedBytes += (end - start);
     }
 
