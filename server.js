@@ -4,8 +4,11 @@ import {
   S3Client,
   ListObjectsV2Command,
   DeleteObjectCommand,
+  CreateMultipartUploadCommand,
+  UploadPartCommand,
+  CompleteMultipartUploadCommand,
+  AbortMultipartUploadCommand,
 } from "@aws-sdk/client-s3";
-import { Upload } from "@aws-sdk/lib-storage";
 import path from "path";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
@@ -37,25 +40,140 @@ const s3 = new S3Client({
 
 const app = express();
 
-// Streaming upload — pipes the raw request body straight to R2 via multipart upload.
-// No body-parser, no buffering, minimal memory. Works on any real server (Render, VPS, local).
-// The browser sends the file as the raw POST body with Content-Type = file MIME type.
+// In-memory tracking of multipart uploads (uploadId → parts)
+const activeUploads = new Map();
+
+// 1. Client calls this to start a multipart upload — server returns uploadId + key
+app.post("/api/upload/init", async (req, res) => {
+  try {
+    const name = (req.query.name || "file").toString().slice(0, 200);
+    const type = req.query.type || "application/octet-stream";
+    const key = safeKey(name);
+
+    const multi = await s3.send(
+      new CreateMultipartUploadCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: key,
+        ContentType: type,
+      })
+    );
+
+    const uploadId = multi.UploadId;
+    activeUploads.set(uploadId, { key, parts: [], name, type });
+
+    res.json({ uploadId, key, name });
+  } catch (err) {
+    console.error("Init error:", err);
+    res.status(500).json({ error: "Init failed", detail: err.message });
+  }
+});
+
+// 2. Client sends each chunk as a separate POST — body is raw chunk bytes, never exceeds 90MB
+app.post("/api/upload/chunk", async (req, res) => {
+  try {
+    const uploadId = req.query.uploadId;
+    const partNumber = parseInt(req.query.part, 10);
+    const meta = activeUploads.get(uploadId);
+
+    if (!meta) {
+      return res.status(400).json({ error: "Invalid or expired uploadId" });
+    }
+
+    // Collect the chunk body into a buffer (max 90MB — under Cloudflare's 100MB limit)
+    const chunks = [];
+    for await (const chunk of req) {
+      chunks.push(chunk);
+    }
+    const body = Buffer.concat(chunks);
+
+    const result = await s3.send(
+      new UploadPartCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: meta.key,
+        PartNumber: partNumber,
+        UploadId: uploadId,
+        Body: body,
+      })
+    );
+
+    meta.parts.push({ PartNumber: partNumber, ETag: result.ETag });
+
+    res.json({ partNumber, etag: result.ETag, size: body.length });
+  } catch (err) {
+    console.error("Chunk error:", err);
+    res.status(500).json({ error: "Chunk upload failed", detail: err.message });
+  }
+});
+
+// 3. Client calls this when all chunks are done — server completes the multipart upload
+app.post("/api/upload/complete", async (req, res) => {
+  try {
+    const uploadId = req.query.uploadId;
+    const meta = activeUploads.get(uploadId);
+
+    if (!meta) {
+      return res.status(400).json({ error: "Invalid or expired uploadId" });
+    }
+
+    // Sort parts by part number before completing
+    const parts = meta.parts.sort((a, b) => a.PartNumber - b.PartNumber);
+
+    await s3.send(
+      new CompleteMultipartUploadCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: meta.key,
+        UploadId: uploadId,
+        MultipartUpload: {
+          Parts: parts,
+        },
+      })
+    );
+
+    activeUploads.delete(uploadId);
+
+    res.json({
+      url: `${R2_PUBLIC_BASE_URL}/${meta.key}`,
+      name: meta.name,
+      key: meta.key,
+    });
+  } catch (err) {
+    console.error("Complete error:", err);
+    // Try to abort the multipart upload to clean up
+    try {
+      const meta = activeUploads.get(req.query.uploadId);
+      if (meta) {
+        await s3.send(
+          new AbortMultipartUploadCommand({
+            Bucket: R2_BUCKET_NAME,
+            Key: meta.key,
+            UploadId: req.query.uploadId,
+          })
+        );
+        activeUploads.delete(req.query.uploadId);
+      }
+    } catch {}
+    res.status(500).json({ error: "Complete failed", detail: err.message });
+  }
+});
+
+// Old single-shot upload (kept for small files under 90MB — skips chunking overhead)
 app.post("/api/upload", async (req, res) => {
   try {
     const name = (req.query.name || "file").toString().slice(0, 200);
     const type = req.headers["content-type"] || "application/octet-stream";
     const key = safeKey(name);
 
+    const { Upload } = await import("@aws-sdk/lib-storage");
     const upload = new Upload({
       client: s3,
       params: {
         Bucket: R2_BUCKET_NAME,
         Key: key,
-        Body: req, // the raw request stream — piped directly to R2
+        Body: req,
         ContentType: type,
       },
       queueSize: 4,
-      partSize: 1024 * 1024 * 8, // 8MB parts
+      partSize: 1024 * 1024 * 8,
     });
 
     await upload.done();
