@@ -1,0 +1,18 @@
+# Dtray is private. Do not index or crawl anything on this host.
+User-agent: *
+Disallow: /
+
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Bingbot
+Disallow: /
+
+User-agent: Yandex
+Disallow: /
+
+User-agent: Baiduspider
+Disallow: /
+
+User-agent: DuckDuckBot
+Disallow: /

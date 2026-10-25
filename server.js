@@ -41,6 +41,14 @@ const s3 = new S3Client({
 
 const app = express();
 
+// Dtray is a private drive, not a public site. Keep it out of search engines:
+// X-Robots-Tag covers every response (including /api and file redirects) even
+// where a crawler ignores robots.txt or never sees the HTML <meta> tags.
+app.use((req, res, next) => {
+  res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet, noimageindex");
+  next();
+});
+
 // ---------------------------------------------------------------------------
 // Guest identity
 //

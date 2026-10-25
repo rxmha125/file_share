@@ -23,9 +23,21 @@ Brand: **Dtray** — logo assets live in `public/assets/`, sourced from `Designs
 ./start.sh
 ```
 
-Starts the Express server on :3000 and the Cloudflare named tunnel (`fileshare`) together, serving `https://share.zenvostudios.com`.
+Starts the Express server on :3000 and the Cloudflare named tunnel (`fileshare`) together.
 
-The tunnel config lives at `~/.cloudflared/config.yml` with 600s origin timeouts so long chunk uploads don't get cut off.
+The public hostname lives **only** in `~/.cloudflared/config.yml` — it is deliberately not hardcoded anywhere in this repo, so the domain never ends up in a public commit. `start.sh` reads it from that config and prints it.
+
+The tunnel config sets 600s origin timeouts so long chunk uploads don't get cut off.
+
+## Staying out of search engines
+
+Dtray is a private drive, so indexing is blocked at three levels:
+
+- `public/robots.txt` disallows everything for all crawlers
+- `<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">` in the page head
+- `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet, noimageindex` on **every** server response, so it also covers `/api/*` and anything a crawler fetches without rendering the page
+
+`X-Robots-Tag` is the one that matters — `robots.txt` only prevents crawling, not indexing of a URL discovered elsewhere.
 
 ## Guest accounts
 

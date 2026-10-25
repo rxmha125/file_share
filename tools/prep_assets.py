@@ -1,41 +1,58 @@
-"""Prepare Dtray brand assets for the web app.
+"""Build Dtray web assets from the new source artwork.
 
-The source PNGs carry a very faint alpha halo (values 1-4) that extends far
-beyond the artwork. A plain alpha bbox therefore keeps hundreds of pixels of
-invisible padding, which makes the logo render small with "empty sides".
-Crop against an alpha *threshold* instead so the box hugs the real artwork.
+Sources (in ~/Downloads):
+  dtray-transparent-text-logo-new.png  — symbol + wordmark, wordmark is WHITE
+  dtray-transparent-logo-new.png       — symbol only
+
+The wordmark is white, which is invisible on the light theme, so this emits
+two lockups: the original white one for dark backgrounds, and a recoloured
+dark-ink one for light backgrounds. Only achromatic bright pixels to the right
+of the symbol are recoloured, so the blue/green/yellow mark is untouched.
 """
 import os
 from PIL import Image
 
-SRC = r"C:\Users\Rx MHA\Downloads\Designs\output\dtray\Final"
+SRC_DIR = os.path.expanduser("~/Downloads")
 OUT = r"C:\Users\Rx MHA\Downloads\file_share_web\public\assets"
-
 os.makedirs(OUT, exist_ok=True)
 
-ALPHA_THRESHOLD = 16  # ignore the invisible halo (values 1-4)
+ALPHA_THRESHOLD = 16
+INK = (31, 31, 31)  # matches --text in the light theme
 
 
 def tight_crop(img, threshold=ALPHA_THRESHOLD):
-    """Crop to the bounding box of pixels whose alpha exceeds `threshold`."""
     rgba = img.convert("RGBA")
-    alpha = rgba.getchannel("A")
-    mask = alpha.point(lambda v: 255 if v > threshold else 0)
+    mask = rgba.getchannel("A").point(lambda v: 255 if v > threshold else 0)
     bbox = mask.getbbox()
-    if not bbox:
-        return rgba
-    return rgba.crop(bbox)
+    return rgba.crop(bbox) if bbox else rgba
 
 
-def square_canvas(img, pad_ratio=0.0):
-    """Centre `img` on a transparent square canvas that just contains it."""
+def symbol_right_edge(img):
+    """Right-most x that contains a saturated (coloured) opaque pixel."""
     w, h = img.size
-    side = max(w, h)
-    pad = int(side * pad_ratio)
-    side += pad * 2
-    canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
-    canvas.paste(img, ((side - w) // 2, (side - h) // 2), img)
-    return canvas
+    edge = 0
+    for x in range(w):
+        for y in range(0, h, 2):
+            r, g, b, a = img.getpixel((x, y))
+            if a > 128 and (max(r, g, b) - min(r, g, b)) > 60:
+                edge = x
+                break
+    return edge
+
+
+def recolour_wordmark(img, edge, ink=INK):
+    """Turn near-white opaque pixels right of `edge` into `ink`, keeping alpha."""
+    out = img.copy()
+    px = out.load()
+    w, h = out.size
+    for x in range(max(0, edge), w):
+        for y in range(h):
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            if max(r, g, b) - min(r, g, b) < 28 and min(r, g, b) > 140:
+                px[x, y] = (ink[0], ink[1], ink[2], a)
+    return out
 
 
 def resize_h(img, target_h):
@@ -43,48 +60,53 @@ def resize_h(img, target_h):
     return img.resize((max(1, round(w * target_h / h)), target_h), Image.LANCZOS)
 
 
-def report(name, img):
-    print(f"  {name}: {img.size}")
+def square_canvas(img):
+    w, h = img.size
+    side = max(w, h)
+    canvas = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+    canvas.paste(img, ((side - w) // 2, (side - h) // 2), img)
+    return canvas
 
 
-print("Cropping to real artwork (alpha > %d):" % ALPHA_THRESHOLD)
+# ---------------------------------------------------------------- lockups
+src = Image.open(os.path.join(SRC_DIR, "dtray-transparent-text-logo-new.png"))
+lock = tight_crop(src)
+print("text logo tight crop:", lock.size)
 
-# ---- full lockups -------------------------------------------------------
-lockups = {
-    "dtray-logo-dark-text.png":  ("2026-10-25_dtray-final-logo-full-transparent_v02.png", 36),
-    "dtray-logo-white-text.png": ("2026-10-25_dtray-final-logo-full-white-text-transparent_v02.png", 36),
-}
-for out_name, (src_name, target_h) in lockups.items():
-    img = tight_crop(Image.open(os.path.join(SRC, src_name)))
-    print(f"\n{src_name}")
-    report("tight crop", img)
-    out = resize_h(img, target_h)
-    out.save(os.path.join(OUT, out_name), "PNG", optimize=True)
-    report("saved " + out_name, out)
+edge = symbol_right_edge(lock)
+print("symbol right edge:", edge, f"({edge / lock.width:.0%} of width)")
 
-# ---- symbol -------------------------------------------------------------
-sym_src = Image.open(os.path.join(SRC, "2026-10-25_dtray-final-logo-symbol-transparent_v02.png"))
+# white wordmark — for dark backgrounds
+white = resize_h(lock, 72)   # 2x of the 36px CSS height
+white.save(os.path.join(OUT, "dtray-logo-white-text.png"), "PNG", optimize=True)
+print("  dtray-logo-white-text.png ", white.size)
+
+# dark ink wordmark — for light backgrounds
+dark = resize_h(recolour_wordmark(lock, edge), 72)   # 2x of the 36px CSS height
+dark.save(os.path.join(OUT, "dtray-logo-dark-text.png"), "PNG", optimize=True)
+print("  dtray-logo-dark-text.png  ", dark.size)
+
+# ---------------------------------------------------------------- symbol
+sym_src = Image.open(os.path.join(SRC_DIR, "dtray-transparent-logo-new.png"))
 sym = tight_crop(sym_src)
-print("\nsymbol")
-report("tight crop", sym)
+print("\nsymbol tight crop:", sym.size)
 
-# square version, the symbol fills it with a hair of breathing room
-sym_sq = square_canvas(sym, pad_ratio=0.0)
-report("square canvas", sym_sq)
-for h in (64, 128, 512):
-    s = sym_sq.resize((h, h), Image.LANCZOS)
-    s.save(os.path.join(OUT, f"dtray-symbol-{h}.png"), "PNG", optimize=True)
-    report(f"saved dtray-symbol-{h}.png", s)
+sq = square_canvas(sym)
+for size in (64, 128, 512):
+    sq.resize((size, size), Image.LANCZOS).save(
+        os.path.join(OUT, f"dtray-symbol-{size}.png"), "PNG", optimize=True)
+    print(f"  dtray-symbol-{size}.png")
 
-# the plain symbol used in the UI
-sym_ui = resize_h(sym, 256)
-sym_ui.save(os.path.join(OUT, "dtray-symbol.png"), "PNG", optimize=True)
-report("saved dtray-symbol.png", sym_ui)
+resize_h(sym, 256).save(os.path.join(OUT, "dtray-symbol.png"), "PNG", optimize=True)
 
-# ---- favicon: square, tightly cropped --------------------------------
-fav = sym_sq.resize((128, 128), Image.LANCZOS)
-fav.save(os.path.join(OUT, "favicon.png"), "PNG", optimize=True)
-report("saved favicon.png (128x128)", fav)
+# favicon: square, artwork touches top and bottom
+sq.resize((128, 128), Image.LANCZOS).save(
+    os.path.join(OUT, "favicon.png"), "PNG", optimize=True)
+print("  favicon.png (128x128)")
+
+sq.resize((180, 180), Image.LANCZOS).save(
+    os.path.join(OUT, "apple-touch-icon.png"), "PNG", optimize=True)
+print("  apple-touch-icon.png (180x180)")
 
 print("\nDone.")
 for f in sorted(os.listdir(OUT)):
